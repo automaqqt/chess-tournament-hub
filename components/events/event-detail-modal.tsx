@@ -33,11 +33,11 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
             <DialogTrigger asChild>{children}</DialogTrigger>
             
             {/* --- 1. THE DIALOG CONTENT IS NOW THE GRID CONTAINER --- */}
-            <DialogContent className="sm:max-w-2xl bg-zinc-900/80 border-zinc-800 backdrop-blur-lg text-white grid grid-rows-[auto_1fr_auto] max-h-[90vh] p-0">
+            <DialogContent className="sm:max-w-3xl bg-zinc-900/80 border-zinc-800 backdrop-blur-lg text-white grid grid-rows-[auto_1fr_auto] max-h-[90vh] p-0">
                 
                 {/* --- 2. HEADER: NO CHANGE, BUT NOW A GRID ROW --- */}
                 <DialogHeader className="p-6 pb-1">
-                    <DialogTitle className="text-3xl font-merriweather text-primary">{event.title}</DialogTitle>
+                    <DialogTitle className="text-4xl font-merriweather text-primary">{event.title}</DialogTitle>
                     <DialogDescription className="text-text-light pt-2">
                         {event.date}
                     </DialogDescription>
