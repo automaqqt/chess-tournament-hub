@@ -17,11 +17,11 @@ import type { Event } from '@prisma/client';
 const initialFormState = {
   type: '',
   message: '',
-  errors: null as any,
-  fields: null as any,
+  errors: null as Record<string, string[]> | null,
+  fields: null as Record<string, unknown> | null,
 
 };
-const feesToString = (fees: any) => {
+const feesToString = (fees: { name: string; price: number }[]) => {
     if (!Array.isArray(fees)) return '';
     return fees.map(f => `${f.name}:${f.price}`).join(', ');
 };
@@ -56,8 +56,8 @@ export default function EventForm({ event }: { event?: Event }) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === 'checkbox';
-    // @ts-ignore
-    setFormData(prev => ({...prev, [name]: isCheckbox ? e.target.checked : value }));
+    // @ts-expect-error - Dynamic property assignment on form data
+    setFormData(prev => ({...prev, [name]: isCheckbox ? (e.target as HTMLInputElement).checked : value }));
   };
 
   return (

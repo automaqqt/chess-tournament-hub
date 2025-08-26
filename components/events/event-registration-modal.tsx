@@ -18,8 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const initialFormState = {
   type: '',
   message: '',
-  errors: null as any,
-  fields: null as any,
+  errors: null as Record<string, string[]> | null,
+  fields: null as Record<string, unknown> | null,
 };
 
 const initialFormValues = {
@@ -136,7 +136,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                                 <SelectValue placeholder="Kategorie auswählen..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {feeOptions.map((fee: any) => (
+                                {feeOptions.map((fee: { name: string; price: number }) => (
                                     <SelectItem key={fee.name} value={fee.name}>
                                         {fee.name} - ${fee.price}
                                     </SelectItem>

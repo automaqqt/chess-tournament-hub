@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 
 export async function GET(
   request: Request,
-  { params }: { params: { eventId: string } }
+  { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
     const parms = await params;
@@ -25,8 +25,12 @@ export async function GET(
 
     const dataToExport = event.registrations.map(reg => ({
       'Registration ID': reg.id,
-      'User Name': reg.userName,
+      'First Name': reg.firstName,
+      'Last Name': reg.lastName,
       'Email': reg.email,
+      'Birth Year': reg.birthYear,
+      'ELO': reg.elo,
+      'Verein': reg.verein,
       'Registered At': reg.createdAt.toISOString(),
     }));
 

@@ -6,14 +6,15 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 };
 
 export default async function EditEventPage({ params }: PageProps) {
+  const { eventId } = await params;
   const event = await prisma.event.findUnique({
-    where: { id: params.eventId },
+    where: { id: eventId },
   });
 
   if (!event) {

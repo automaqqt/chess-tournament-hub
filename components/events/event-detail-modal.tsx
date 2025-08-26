@@ -67,7 +67,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                             <div className="modal-section">
                                 <h4 className="text-lg font-semibold mb-2 border-l-2 border-primary pl-3">Preise & Startgeld</h4>
                                 <ul className="list-none text-text-light pl-4 space-y-1">
-                                    {fees.map((fee: any) => (
+                                    {fees.map((fee: { name: string; price: number }) => (
                                         <li key={fee.name} className="flex items-center gap-3">
                                             <span className="text-primary">♙</span> {fee.name}: ${fee.price}
                                         </li>

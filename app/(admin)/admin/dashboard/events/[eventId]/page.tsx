@@ -17,9 +17,9 @@ import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 };
 
 export default async function EventRegistrationsPage({ params }: PageProps) {
@@ -90,7 +90,7 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
                   {event.registrations.map((reg, index) => (
                     <TableRow key={reg.id}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">{reg.userName}</TableCell>
+                      <TableCell className="font-medium">{reg.firstName} {reg.lastName}</TableCell>
                       <TableCell>{reg.email}</TableCell>
                       <TableCell>{reg.birthYear}</TableCell>
                       <TableCell>{reg.verein}</TableCell>
@@ -100,7 +100,7 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
                       {/* Dynamically add cells for custom field data */}
                       {customFieldHeaders.map(header => (
                         <TableCell key={header}>
-                          {(reg.additionalInfo as any)?.[header] || 'N/A'}
+                          {(reg.additionalInfo as Record<string, unknown>)?.[header] || 'N/A'}
                         </TableCell>
                       ))}
                     </TableRow>

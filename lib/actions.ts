@@ -168,15 +168,18 @@ const registrationSchema = z.object({
     customFields: z.string().optional(),
     pdfFile: z.any().refine(
         (file) => {
+            // If no file is uploaded, or it's an empty file, it's valid (optional).
             if (!file || file.size === 0) {
-                return true; // Optional file is allowed
+                return true;
             }
-            // The `File` object will only be present when called from the client.
-            // When this schema is evaluated on the server at build time, `File` might not be defined,
-            // but the refine function won't be called with a File object then.
-            return file instanceof File;
+            // Check if it has the properties of a File object.
+            return (
+                typeof file.name === 'string' &&
+                typeof file.size === 'number' &&
+                typeof file.type === 'string'
+            );
         },
-        { message: "Invalid file type." }
+        { message: "Invalid file upload." }
     ).optional(),
 });
 
