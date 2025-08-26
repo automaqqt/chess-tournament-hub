@@ -201,8 +201,9 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         const filename = `${Date.now()}-${pdfFile.name.replace(/\s+/g, '_')}`;
         
         // --- START OF FIX ---
-        // 1. Define the target directory
-        const uploadDir = path.join(process.cwd(), 'public/uploads/pdfs');
+        // 1. Define the target directory using environment variable or default
+        const pdfUploadPath = process.env.PDF_UPLOAD_PATH || 'public/uploads/pdfs';
+        const uploadDir = path.join(pdfUploadPath);
         
         try {
             // 2. Ensure the directory exists. `recursive: true` creates parent directories if needed.
@@ -213,7 +214,10 @@ async function handleEventForm(formData: FormData, eventId?: string) {
 
             // 4. Write the file
             await fs.writeFile(uploadPath, buffer);
-            pdfUrl = `/uploads/pdfs/${filename}`;
+            
+            // 5. Generate the public URL - use environment variable or default
+            const pdfUrlBase = '/uploads/pdfs';
+            pdfUrl = `${pdfUrlBase}/${filename}`;
         // --- END OF FIX ---
         } catch (error) {
             console.error("File upload failed:", error);
