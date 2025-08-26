@@ -25,7 +25,7 @@ export default async function EditEventPage({ params }: PageProps) {
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
           <CardTitle className="text-3xl font-merriweather text-primary">Edit Event</CardTitle>
-          <CardDescription>Update the details for "{event.title}".</CardDescription>
+          <CardDescription>Update the details for &quot;{event.title}&quot;.</CardDescription>
         </CardHeader>
         <CardContent>
           <EventForm event={event} />

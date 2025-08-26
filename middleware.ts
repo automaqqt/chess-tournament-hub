@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   // Protect /admin and /api/export routes
   //if (pathname.startsWith('/admin') || pathname.startsWith('/api/export')) {
     const token = request.cookies.get('auth_token')?.value;
-    console.log(token)
+    
     if (!token) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';

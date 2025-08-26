@@ -18,7 +18,7 @@ const parseFees = (feeString: string) => {
             }
             return { name: name.trim(), price: parseInt(price.trim()) };
         });
-    } catch (error) {
+    } catch {
         throw new Error('Invalid fee format. Use "Name:Price, Name2:Price2".');
     }
 };
@@ -29,7 +29,7 @@ const loginSchema = z.object({
     password: z.string().min(1, { message: 'Password is required.' }),
 });
 
-export async function login(prevState: any, formData: FormData) {
+export async function login(prevState: { type: string; message?: string; errors?: Record<string, string[]> } | null, formData: FormData) {
     const validatedFields = loginSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -60,7 +60,7 @@ const registrationSchema = z.object({
   });
   
   
-  export async function registerForEvent(prevState: any, formData: FormData) {
+  export async function registerForEvent(prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
     
     const validatedFields = registrationSchema.safeParse(rawData);
@@ -74,7 +74,7 @@ const registrationSchema = z.object({
     }
   
     // Destructure the new fields
-    const { firstName, lastName, email, birthYear, verein, elo, eventId, feeCategory, agreeToTerms } = validatedFields.data;
+    const { firstName, lastName, email, birthYear, verein, elo, eventId } = validatedFields.data;
   
     try {
       const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -157,8 +157,8 @@ const registrationSchema = z.object({
     fees: z.string().transform((val, ctx) => {
         try {
             return parseFees(val);
-        } catch (e: any) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: e.message });
+        } catch (e: unknown) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: e instanceof Error ? e.message : 'Invalid fee format' });
             return z.NEVER;
         }
     }),
@@ -166,7 +166,18 @@ const registrationSchema = z.object({
     type: z.enum(['classic', 'blitz', 'scholastic', 'rapid']),
     isPremier: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     customFields: z.string().optional(),
-    pdfFile: z.instanceof(File).optional(),
+    pdfFile: z.any().refine(
+        (file) => {
+            if (!file || file.size === 0) {
+                return true; // Optional file is allowed
+            }
+            // The `File` object will only be present when called from the client.
+            // When this schema is evaluated on the server at build time, `File` might not be defined,
+            // but the refine function won't be called with a File object then.
+            return file instanceof File;
+        },
+        { message: "Invalid file type." }
+    ).optional(),
 });
 
 async function handleEventForm(formData: FormData, eventId?: string) {
@@ -219,11 +230,11 @@ async function handleEventForm(formData: FormData, eventId?: string) {
     redirect('/admin/dashboard');
 }
 
-export async function createEvent(prevState: any, formData: FormData) {
+export async function createEvent(prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
     return handleEventForm(formData);
 }
 
-export async function updateEvent(eventId: string, prevState: any, formData: FormData) {
+export async function updateEvent(eventId: string, prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
     return handleEventForm(formData, eventId);
 }
 

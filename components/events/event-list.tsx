@@ -55,8 +55,8 @@ export default function EventList({ initialEvents }: { initialEvents: Event[] })
 
       {filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {filteredEvents.map((event, index) => (
-            <EventCard key={event.id} event={event} index={index} />
+          {filteredEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
           ))}
         </div>
       ) : (

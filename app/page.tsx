@@ -1,6 +1,5 @@
 import EventList from "@/components/events/event-list";
 import prisma from "@/lib/db";
-import { Search } from "lucide-react";
 
 export default async function HomePage() {
   const events = await prisma.event.findMany({

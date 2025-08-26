@@ -4,15 +4,16 @@ import type { Event } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin } from 'lucide-react';
+import Image from 'next/image';
 import EventDetailsModal from './event-detail-modal';
 
 const PremierStamp = () => (
   <div className="premier-stamp">
-    <img src="/logo.png" alt="Premier Event" className="w-full h-full object-contain" />
+    <Image src="/logo.png" alt="Premier Event" width={48} height={48} className="object-contain" />
   </div>
 );
 
-export default function EventCard({ event, index }: { event: Event; index: number }) {
+export default function EventCard({ event }: { event: Event }) {
   return (
     <Card className="relative bg-black/30 border-zinc-800 shadow-lg shadow-black/30 backdrop-blur-xl overflow-hidden flex flex-col transition-all duration-300 hover:border-primary hover:-translate-y-2">
       {event.isPremier && <PremierStamp />}

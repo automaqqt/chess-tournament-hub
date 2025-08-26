@@ -1,8 +1,7 @@
 'use server';
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import bcrypt from 'bcryptjs';
 
 const secretKey = process.env.JWT_SECRET!;
 const key = new TextEncoder().encode(secretKey);
