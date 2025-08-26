@@ -2,8 +2,8 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect, useState, useMemo, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,11 +15,16 @@ import type { Event } from '@prisma/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const initialFormState = {
+// Define the proper type based on what registerForEvent actually returns
+type RegistrationState = {
+  type: string;
+  message?: string;
+  errors?: Record<string, string[]>;
+  fields?: Record<string, unknown>;
+};
+
+const initialFormState: RegistrationState = {
   type: '',
-  message: '',
-  errors: null as Record<string, string[]> | null,
-  fields: null as Record<string, unknown> | null,
 };
 
 const initialFormValues = {
@@ -32,8 +37,6 @@ const initialFormValues = {
     agreeToTerms: false,
 };
 
-
-
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -44,24 +47,41 @@ function SubmitButton() {
 }
 
 export default function RegistrationModal({ event, children }: { event: Event; children: React.ReactNode }) {
-  const [state, formAction] = useFormState(registerForEvent, initialFormState);
+  const [state, formAction] = useActionState(registerForEvent, initialFormState);
   const [isOpen, setIsOpen] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
   const feeOptions = useMemo(() => {
     return Array.isArray(event.fees) ? event.fees : [];
-}, [event.fees]);
+  }, [event.fees]);
+
   // --- NEW: Local state to control the form inputs ---
-  const [formValues, setFormValues] = useState(initialFormValues);
+  type FormValues = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    birthYear: string;
+    elo: string;
+    verein: string;
+    agreeToTerms: boolean;
+    [key: string]: string | boolean; // For dynamic custom fields
+  };
+  const [formValues, setFormValues] = useState<FormValues>(initialFormValues as FormValues);
 
   useEffect(() => {
     if (state.type === 'success') {
-      toast.success(state.message);
+      if ('message' in state) {
+        toast.success(state.message);
+      }
       setIsOpen(false);
       setFormValues(initialFormValues); // Reset form on success
     } else if (state.type === 'error') {
-      if (state.message) toast.error(state.message);
+      if ('message' in state && state.message) {
+        toast.error(state.message);
+      }
       // --- NEW: Repopulate form with previous values on error ---
-      if (state.fields) {
-        setFormValues(prev => ({...prev, ...state.fields}));
+      if ('fields' in state && state.fields) {
+        //@ts-expect-error cause its shiet
+        setFormValues(prev => ({...prev, ...state.fields as Partial<FormValues>}));
       }
     }
   }, [state]);
@@ -74,6 +94,37 @@ export default function RegistrationModal({ event, children }: { event: Event; c
   const handleCheckboxChange = (checked: boolean) => {
     setFormValues(prev => ({ ...prev, agreeToTerms: checked }));
   };
+
+  // Check if form has been started (any field filled)
+  const isFormTouched = () => {
+    return formValues.firstName !== '' || 
+           formValues.lastName !== '' || 
+           formValues.email !== '' || 
+           formValues.birthYear !== '' || 
+           formValues.elo !== '' || 
+           formValues.verein !== '';
+  };
+
+  // Handle modal close with confirmation if form is touched
+  const handleModalClose = (open: boolean) => {
+    if (!open && isFormTouched() && isOpen) {
+      setShowConfirmClose(true);
+    } else {
+      setIsOpen(open);
+    }
+  };
+
+  // Confirm close and reset form
+  const confirmClose = () => {
+    setShowConfirmClose(false);
+    setIsOpen(false);
+    setFormValues(initialFormValues);
+  };
+
+  // Cancel close confirmation
+  const cancelClose = () => {
+    setShowConfirmClose(false);
+  };
   
   const customFields = useMemo(() => {
     if (!event.customFields) return [];
@@ -81,7 +132,8 @@ export default function RegistrationModal({ event, children }: { event: Event; c
   }, [event.customFields]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md bg-zinc-900/80 border-zinc-800 backdrop-blur-lg text-white">
         <DialogHeader>
@@ -131,12 +183,12 @@ export default function RegistrationModal({ event, children }: { event: Event; c
               {feeOptions.length > 0 && (
                     <div className="space-y-2">
                         <Label htmlFor="feeCategory">Startgeld-Kategorie</Label>
-                        <Select name="feeCategory" defaultValue={state.fields?.feeCategory}>
+                        <Select name="feeCategory" defaultValue={state.fields?.feeCategory as string | undefined}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Kategorie auswählen..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {feeOptions.map((fee: { name: string; price: number }) => (
+                                {(feeOptions as { name: string; price: number }[]).map((fee) => (
                                     <SelectItem key={fee.name} value={fee.name}>
                                         {fee.name} - ${fee.price}
                                     </SelectItem>
@@ -160,7 +212,8 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                         <div key={field} className="space-y-2">
                             <Label htmlFor={field}>{field}</Label>
                             
-                            <Input id={field} name={field} value={formValues[field] || ''} onChange={handleChange} />
+                            <Input id={field} name={field} value={typeof formValues[field] === 'string' ? formValues[field] : ''} onChange={handleChange} />
+                            {state.errors?.[field] && <p className="text-red-500 text-sm">{state.errors[field][0]}</p>}
                         </div>
                     ))}
                 </div>
@@ -181,12 +234,39 @@ export default function RegistrationModal({ event, children }: { event: Event; c
             </div>
             
             <DialogFooter className="mt-4">
-              <DialogClose asChild><Button type="button" variant="outline">Abbrechen</Button></DialogClose>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => handleModalClose(false)}
+              >
+                Abbrechen
+              </Button>
               <SubmitButton />
             </DialogFooter>
           </form>
         </ScrollArea>
       </DialogContent>
     </Dialog>
+
+    {/* Confirmation Dialog */}
+    <Dialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+      <DialogContent className="sm:max-w-md bg-zinc-900/80 border-zinc-800 backdrop-blur-lg text-white">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-merriweather text-primary">Anmeldung wirklich abbrechen?</DialogTitle>
+          <DialogDescription>
+            Sie haben bereits Daten eingegeben. Wenn Sie jetzt abbrechen, gehen alle eingegebenen Daten verloren.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={cancelClose}>
+            Weiter ausfüllen
+          </Button>
+          <Button variant="destructive" onClick={confirmClose}>
+            Ja, abbrechen
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

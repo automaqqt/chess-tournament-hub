@@ -50,11 +50,11 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
         <Button asChild variant="outline" size="sm" className="mb-4">
           <Link href="/admin/dashboard">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            Zurück zum Dashboard
           </Link>
         </Button>
         <h1 className="text-3xl font-bold font-merriweather text-primary">{event.title}</h1>
-        <p className="text-muted-foreground">List of all registered participants.</p>
+        <p className="text-muted-foreground">Liste aller angemeldeten Teilnehmer.</p>
       </div>
 
       <Card className="bg-zinc-900/50 border-zinc-800">
@@ -67,7 +67,7 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
         <CardContent>
           {event.registrations.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
-              <p>No one has registered for this event yet.</p>
+              <p>Noch niemand hat sich für diese Veranstaltung angemeldet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -76,9 +76,9 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
                   <TableRow>
                     <TableHead>#</TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Birth Year</TableHead>
-                    <TableHead>Club (Verein)</TableHead>
+                    <TableHead>E-Mail</TableHead>
+                    <TableHead>Geburtsjahr</TableHead>
+                    <TableHead>Verein</TableHead>
                     <TableHead>ELO</TableHead>
                     {/* Dynamically add headers for custom fields */}
                     {customFieldHeaders.map(header => (
@@ -100,7 +100,7 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
                       {/* Dynamically add cells for custom field data */}
                       {customFieldHeaders.map(header => (
                         <TableCell key={header}>
-                          {(reg.additionalInfo as Record<string, unknown>)?.[header] || 'N/A'}
+                          {String((reg.additionalInfo as Record<string, unknown>)?.[header] || 'N/A')}
                         </TableCell>
                       ))}
                     </TableRow>

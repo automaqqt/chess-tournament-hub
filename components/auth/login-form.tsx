@@ -9,14 +9,19 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useActionState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-const initialState = {
+// Based on the error, your login action returns one of these two shapes
+type LoginState = 
+  | { type: string; message: string }
+  | { type: string; errors: { username?: string[]; password?: string[] } };
+
+const initialState: LoginState = {
   type: '',
   message: '',
 };
 
 function LoginButton() {
   const { pending } = useFormStatus();
-  return <Button className="w-full" type="submit" disabled={pending}>{pending ? "Signing In..." : "Sign In"}</Button>;
+  return <Button className="w-full" type="submit" disabled={pending}>{pending ? "Anmelden..." : "Anmelden"}</Button>;
 }
 
 export default function LoginForm() {
@@ -24,7 +29,18 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (state?.type === 'error') {
-      toast.error(state.message);
+      // Check if there's a message property
+      if ('message' in state) {
+        toast.error(state.message);
+      }
+      // Handle validation errors
+      else if ('errors' in state && state.errors) {
+        // Display the first validation error found
+        const firstError = Object.values(state.errors).find(err => err && err.length > 0);
+        if (firstError && firstError[0]) {
+          toast.error(firstError[0]);
+        }
+      }
     }
   }, [state]);
 
@@ -33,12 +49,18 @@ export default function LoginForm() {
       <Card className="bg-transparent border-none shadow-none">
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Benutzername</Label>
             <Input id="username" name="username" required />
+            {state?.type === 'error' && 'errors' in state && state.errors?.username && (
+              <p className="text-red-500 text-sm">{state.errors.username[0]}</p>
+            )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Passwort</Label>
             <Input id="password" name="password" type="password" required />
+            {state?.type === 'error' && 'errors' in state && state.errors?.password && (
+              <p className="text-red-500 text-sm">{state.errors.password[0]}</p>
+            )}
           </div>
         </CardContent>
         <CardFooter>

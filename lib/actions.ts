@@ -183,6 +183,7 @@ const registrationSchema = z.object({
     ).optional(),
 });
 
+// --- MODIFIED FUNCTION ---
 async function handleEventForm(formData: FormData, eventId?: string) {
     const rawData = Object.fromEntries(formData.entries());
     const validatedFields = eventSchema.safeParse(rawData);
@@ -198,13 +199,25 @@ async function handleEventForm(formData: FormData, eventId?: string) {
     if (pdfFile && pdfFile.size > 0) {
         const buffer = Buffer.from(await pdfFile.arrayBuffer());
         const filename = `${Date.now()}-${pdfFile.name.replace(/\s+/g, '_')}`;
-        const uploadPath = path.join(process.cwd(), 'public/uploads/pdfs', filename);
+        
+        // --- START OF FIX ---
+        // 1. Define the target directory
+        const uploadDir = path.join(process.cwd(), 'public/uploads/pdfs');
         
         try {
+            // 2. Ensure the directory exists. `recursive: true` creates parent directories if needed.
+            await fs.mkdir(uploadDir, { recursive: true });
+
+            // 3. Define the full path for the file
+            const uploadPath = path.join(uploadDir, filename);
+
+            // 4. Write the file
             await fs.writeFile(uploadPath, buffer);
             pdfUrl = `/uploads/pdfs/${filename}`;
+        // --- END OF FIX ---
         } catch (error) {
             console.error("File upload failed:", error);
+            // This will now provide a more detailed error in your server logs
             return { type: 'error', message: 'Failed to upload PDF.', fields: rawData };
         }
     }
@@ -240,7 +253,6 @@ export async function createEvent(prevState: { type: string; message?: string; e
 export async function updateEvent(eventId: string, prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
     return handleEventForm(formData, eventId);
 }
-
 
 // --- NEW: Delete Event Action ---
 export async function deleteEvent(eventId: string) {
