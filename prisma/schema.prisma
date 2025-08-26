@@ -1,0 +1,46 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id            String         @id @default(cuid())
+  title         String
+  description   String
+  fullDetails   String
+  date          String
+  location      String
+  fees          Json           @default("[]") // Store fees as JSON array e.g., [{"name":"Adult","price":50}]
+  pdfUrl        String?        // Optional field for the PDF link
+  registrationEndDate DateTime // New field for the deadline
+  type          String
+  isPremier     Boolean        @default(false)
+  customFields  String         @default("")
+  registrations Registration[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Registration {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  birthYear Int
+  verein    String   @default("")
+  elo       Int
+  feeCategory String   @default("Standard") // To store which fee the user selected
+  additionalInfo Json  
+  
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  createdAt DateTime @default(now())
+
+  @@unique([email, eventId])
+}
