@@ -47,7 +47,7 @@ export default function EventList({ initialEvents }: { initialEvents: Event[] })
               onClick={() => setActiveFilter(filter)}
               className="capitalize rounded-full px-5 py-2 border-zinc-700 hover:bg-zinc-800"
             >
-              {filter === 'premier' ? 'Premier Turniere' : filter === 'all' ? 'Alle' : filter}
+              {filter === 'premier' ? 'Schachzwerge Events' : filter === 'all' ? 'Alle' : filter}
             </Button>
           ))}
         </div>

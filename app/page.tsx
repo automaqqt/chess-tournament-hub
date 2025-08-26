@@ -15,8 +15,7 @@ export default async function HomePage() {
   return (
     <main className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12" style={{backgroundColor:'46F527'}}>
       <header className="mb-8">
-        <h1 className="text-4xl md:text-5xl font-merriweather font-bold text-white">Finde dein nächstes Turnier</h1>
-        <p className="mt-2 primary-color text-lg">Stöbern, filtern und für kommende Schachturniere anmelden.</p>
+        <h1 className="text-4xl md:text-5xl font-merriweather font-bold text-white">Schachturniere Magdeburg</h1>
       </header>
 
       <EventList initialEvents={events} />

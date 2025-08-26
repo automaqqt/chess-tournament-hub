@@ -36,10 +36,10 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
             <DialogContent className="sm:max-w-2xl bg-zinc-900/80 border-zinc-800 backdrop-blur-lg text-white grid grid-rows-[auto_1fr_auto] max-h-[90vh] p-0">
                 
                 {/* --- 2. HEADER: NO CHANGE, BUT NOW A GRID ROW --- */}
-                <DialogHeader className="p-6 pb-4">
+                <DialogHeader className="p-6 pb-1">
                     <DialogTitle className="text-3xl font-merriweather text-primary">{event.title}</DialogTitle>
                     <DialogDescription className="text-text-light pt-2">
-                        {event.location} &bull; {event.date}
+                        {event.date}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -90,7 +90,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                     {event.pdfUrl && (
                         <Button asChild variant="outline" className="w-full sm:w-auto">
                             <a href={event.pdfUrl} target="_blank" rel="noopener noreferrer">
-                                <Download className="mr-2 h-4 w-4" /> Flyer herunterladen
+                                <Download className="mr-2 h-4 w-4" /> Ausschreibung
                             </a>
                         </Button>
                     )}
