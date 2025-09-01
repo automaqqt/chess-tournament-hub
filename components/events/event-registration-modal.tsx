@@ -173,12 +173,22 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                       <Input id="birthYear" name="birthYear" type="number" placeholder="e.g., 1995" value={formValues.birthYear} onChange={handleChange} />
                       {state.errors?.birthYear && <p className="text-red-500 text-sm">{state.errors.birthYear[0]}</p>}
                   </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="elo">ELO-Zahl</Label>
-                      <Input id="elo" name="elo" type="number" placeholder="e.g., 1800" value={formValues.elo} onChange={handleChange} />
-                      {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
-                  </div>
+                  {event.isEloRequired && (
+                    <div className="space-y-2">
+                        <Label htmlFor="elo">ELO-Zahl</Label>
+                        <Input id="elo" name="elo" type="number" placeholder="e.g., 1800" value={formValues.elo} onChange={handleChange} />
+                        {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
+                    </div>
+                  )}
               </div>
+
+              {!event.isEloRequired && (
+                <div className="space-y-2">
+                    <Label htmlFor="elo">ELO-Zahl (Optional)</Label>
+                    <Input id="elo" name="elo" type="number" placeholder="e.g., 1800" value={formValues.elo} onChange={handleChange} />
+                    {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
+                </div>
+              )}
 
               {feeOptions.length > 0 && (
                     <div className="space-y-2">

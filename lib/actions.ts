@@ -51,7 +51,7 @@ const registrationSchema = z.object({
     email: z.string().email({ message: 'Please enter a valid email address.' }),
     birthYear: z.coerce.number().min(1920, "Invalid birth year.").max(new Date().getFullYear() - 5, "You must be at least 5 years old."),
     verein: z.string().optional(),
-    elo: z.coerce.number().min(100, "ELO must be at least 100.").max(3000, "ELO cannot exceed 3000."),
+    elo: z.string().optional(),
     eventId: z.string(),
     feeCategory: z.string().optional(),
     agreeToTerms: z.preprocess((val) => val === 'on', z.boolean()).refine(val => val === true, {
@@ -86,6 +86,26 @@ const registrationSchema = z.object({
         errors: { feeCategory: ['You must select a fee category.'] },
         fields: rawData,
       };
+    }
+
+    // Check if ELO is required and validate it
+    if (event.isEloRequired) {
+      const eloValue = validatedFields.data.elo;
+      if (!eloValue || eloValue.trim() === '') {
+        return {
+          type: 'error',
+          errors: { elo: ['ELO-Zahl ist erforderlich.'] },
+          fields: rawData,
+        };
+      }
+      const eloNumber = parseInt(eloValue);
+      if (isNaN(eloNumber) || eloNumber < 100 || eloNumber > 3000) {
+        return {
+          type: 'error',
+          errors: { elo: ['ELO muss zwischen 100 und 3000 liegen.'] },
+          fields: rawData,
+        };
+      }
     }
   
     // Destructure the new fields
@@ -137,7 +157,7 @@ const registrationSchema = z.object({
           email,
           birthYear,
           verein: verein || 'N/A',
-          elo,
+          elo: elo ? parseInt(elo) : 0,
           eventId,
           additionalInfo,
         },
@@ -191,6 +211,7 @@ const registrationSchema = z.object({
     registrationEndDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format" }),
     type: z.enum(['classic', 'blitz', 'scholastic', 'rapid']),
     isPremier: z.preprocess((val) => val === 'on', z.boolean()).optional(),
+    isEloRequired: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     customFields: z.string().optional(),
     emailText: z.string().optional(),
     organiserEmail: z.string().email({ message: 'Please enter a valid email address.' }).optional().or(z.literal('')),
@@ -259,6 +280,7 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         date: new Date(eventData.date),
         pdfUrl,
         isPremier: eventData.isPremier || false,
+        isEloRequired: eventData.isEloRequired !== undefined ? eventData.isEloRequired : true,
         registrationEndDate: new Date(eventData.registrationEndDate),
     };
 

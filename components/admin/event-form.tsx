@@ -29,6 +29,7 @@ type FormState = {
     fees?: string[];
     type?: string[];
     isPremier?: string[];
+    isEloRequired?: string[];
     customFields?: string[];
     registrationEndDate?: string[];
     pdfFile?: string[];
@@ -74,7 +75,7 @@ export default function EventForm({ event }: { event?: Event }) {
   // Initialize with event data for editing, or defaults for creating
   const [formData, setFormData] = useState(event || {
     title: '', description: '', fullDetails: '', date: '', location: '',
-    entryFee: 0, type: 'classic', isPremier: false, customFields: '', emailText: '', organiserEmail: ''
+    entryFee: 0, type: 'classic', isPremier: false, isEloRequired: true, customFields: '', emailText: '', organiserEmail: ''
   });
 
   // Separate state for fees management
@@ -278,9 +279,15 @@ export default function EventForm({ event }: { event?: Event }) {
         {state.errors?.organiserEmail && <p className="text-red-500 text-sm">{state.errors.organiserEmail[0]}</p>}
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox id="isPremier" name="isPremier" checked={!!formData.isPremier} onCheckedChange={(checked) => setFormData(prev => ({...prev, isPremier: !!checked}))} />
-        <Label htmlFor="isPremier" className="text-sm font-medium leading-none">Als interne Schachzwerge Veranstaltung markieren</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox id="isPremier" name="isPremier" checked={!!formData.isPremier} onCheckedChange={(checked) => setFormData(prev => ({...prev, isPremier: !!checked}))} />
+          <Label htmlFor="isPremier" className="text-sm font-medium leading-none">Als interne Schachzwerge Veranstaltung markieren</Label>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox id="isEloRequired" name="isEloRequired" checked={!!formData.isEloRequired} onCheckedChange={(checked) => setFormData(prev => ({...prev, isEloRequired: !!checked}))} />
+          <Label htmlFor="isEloRequired" className="text-sm font-medium leading-none">ELO-Zahl als Pflichtfeld</Label>
+        </div>
       </div>
 
       <div className="flex justify-end"><SubmitButton isEditing={isEditing} /></div>

@@ -16,7 +16,8 @@ async function main() {
       description: 'Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche.',
       fullDetails: 'Format: Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche incl. ein Mini-Turnier für Neueinsteiger. Gruppe 1 Zwerge-Cup: Offen für alle Teilnehmer bis DWZ 1200. Gruppe 2 Däumling-Cup: Für Grundschüler der 1. und 2. Klasse. Gruppe 3 KITA-Cup: Für KITA-Kinder. Gruppe 4 Mini-Turnier: Für Neulinge und Kinder mit sehr wenig Turniererfahrung (max. 4 Turnierteilnahmen bisher) ab 3. Klasse. Modus: Schweizer System-Turnier, 5 Runden, 15 min Bedenkzeit. Anmeldung: 09:00 Uhr – 09:15 Uhr. Turnierstart: 09:30 Uhr. Siegerehrung: Gegen 13:15 Uhr. Wertung: 1. Erzielte Punkte, 2. Buchholz-Wertung. Preise: Gruppensieger Pokal, Platzierte Medaillen. Gesamtwertung im Zwerge- und Däumling-Cup. Startgeld: 7,- Euro pro TeilnehmerIn.',
       fees: [{"name":"Normal","price":7},{"name":"Kinder","price":5}],
-      isPremier: false,
+      isPremier: true,
+      isEloRequired: true,
       type: 'scholastic',
       registrationEndDate: new Date('2025-09-10T23:59:59'), // Mittwoch vor dem Spieltag
     },
@@ -30,6 +31,7 @@ async function main() {
       fullDetails: 'Format: Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche incl. ein Mini-Turnier für Neueinsteiger. Gruppe 1 Zwerge-Cup: Offen für alle Teilnehmer bis DWZ 1200. Gruppe 2 Däumling-Cup: Für Grundschüler der 1. und 2. Klasse. Gruppe 3 KITA-Cup: Für KITA-Kinder. Gruppe 4 Mini-Turnier: Für Neulinge und Kinder mit sehr wenig Turniererfahrung (max. 4 Turnierteilnahmen bisher) ab 3. Klasse. Modus: Schweizer System-Turnier, 5 Runden, 15 min Bedenkzeit. Anmeldung: 09:00 Uhr – 09:15 Uhr. Turnierstart: 09:30 Uhr. Siegerehrung: Gegen 13:15 Uhr. Wertung: 1. Erzielte Punkte, 2. Buchholz-Wertung. Preise: Gruppensieger Pokal, Platzierte Medaillen. Gesamtwertung im Zwerge- und Däumling-Cup. Startgeld: 7,- Euro pro TeilnehmerIn.',
       fees: [{"name":"Normal","price":7},{"name":"Kinder","price":5}],
       isPremier: false,
+      isEloRequired: false,
       type: 'scholastic',
       registrationEndDate: new Date('2025-11-12T23:59:59'), // Mittwoch vor dem Spieltag
     },
@@ -43,6 +45,7 @@ async function main() {
       fullDetails: 'Format: Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche incl. ein Mini-Turnier für Neueinsteiger. Gruppe 1 Zwerge-Cup: Offen für alle Teilnehmer bis DWZ 1200. Gruppe 2 Däumling-Cup: Für Grundschüler der 1. und 2. Klasse. Gruppe 3 KITA-Cup: Für KITA-Kinder. Gruppe 4 Mini-Turnier: Für Neulinge und Kinder mit sehr wenig Turniererfahrung (max. 4 Turnierteilnahmen bisher) ab 3. Klasse. Modus: Schweizer System-Turnier, 5 Runden, 15 min Bedenkzeit. Anmeldung: 09:00 Uhr – 09:15 Uhr. Turnierstart: 09:30 Uhr. Siegerehrung: Gegen 13:15 Uhr. Wertung: 1. Erzielte Punkte, 2. Buchholz-Wertung. Preise: Gruppensieger Pokal, Platzierte Medaillen. Gesamtwertung im Zwerge- und Däumling-Cup. Startgeld: 7,- Euro pro TeilnehmerIn.',
       fees: [{"name":"Normal","price":7},{"name":"Kinder","price":5}],
       isPremier: false,
+      isEloRequired: true,
       type: 'scholastic',
       registrationEndDate: new Date('2026-02-18T23:59:59'), // Mittwoch vor dem Spieltag
     },

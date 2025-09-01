@@ -21,6 +21,7 @@ model Event {
   registrationEndDate DateTime // New field for the deadline
   type          String
   isPremier     Boolean        @default(false)
+  isEloRequired Boolean        @default(true) // Whether ELO is required for registration
   customFields  String         @default("")
   emailText     String         @default("") // Custom email text for registration confirmations
   organiserEmail String?       // Optional organiser email for BCC on registrations
