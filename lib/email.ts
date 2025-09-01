@@ -8,6 +8,10 @@ type RegistrationEmailPayload = {
   lastName: string;
   email: string;
   eventName: string;
+  eventDate?: string;
+  eventLocation?: string;
+  customEmailText?: string;
+  organiserEmail?: string;
 };
 
 // 1. Create a Nodemailer transporter using your SMTP credentials
@@ -22,8 +26,30 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// 2. Function to create the HTML content for the email
+// 2. Function to replace placeholders in custom text
+function replacePlaceholders(text: string, payload: RegistrationEmailPayload): string {
+  return text
+    .replace(/\{firstName\}/g, payload.firstName)
+    .replace(/\{lastName\}/g, payload.lastName)
+    .replace(/\{eventTitle\}/g, payload.eventName)
+    .replace(/\{eventDate\}/g, payload.eventDate || '')
+    .replace(/\{eventLocation\}/g, payload.eventLocation || '');
+}
+
+// 3. Function to create the HTML content for the email
 function getRegistrationEmailHtml(payload: RegistrationEmailPayload): string {
+  // If custom email text is provided, use it with placeholder replacement
+  if (payload.customEmailText && payload.customEmailText.trim()) {
+    const customContent = replacePlaceholders(payload.customEmailText, payload);
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #d4af37;">Anmeldung bestätigt!</h2>
+        <div style="white-space: pre-line;">${customContent}</div>
+      </div>
+    `;
+  }
+
+  // Default email template
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
   <h2 style="color: #d4af37;">Anmeldung bestätigt!</h2>
@@ -54,6 +80,7 @@ export async function sendRegistrationConfirmationEmail(payload: RegistrationEma
     to: payload.email,
     subject: `Confirmation for your registration to "${payload.eventName}"`,
     html: getRegistrationEmailHtml(payload),
+    ...(payload.organiserEmail && { bcc: payload.organiserEmail }),
   };
 
   try {

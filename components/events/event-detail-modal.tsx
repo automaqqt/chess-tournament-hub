@@ -15,6 +15,7 @@ import type { Event } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import RegistrationModal from './event-registration-modal';
 import { Download } from 'lucide-react';
+import React from 'react';
 
 export default function EventDetailsModal({ event, children }: { event: Event; children: React.ReactNode }) {
     const isRegistrationOpen = new Date() < new Date(event.registrationEndDate);
@@ -39,7 +40,14 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                 <DialogHeader className="p-6 pb-1">
                     <DialogTitle className="text-4xl font-merriweather text-primary">{event.title}</DialogTitle>
                     <DialogDescription className="text-text-light pt-2">
-                        {event.date}
+                        {new Date(event.date).toLocaleDateString('de-DE', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -48,7 +56,10 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                     <div className="grid gap-6 py-4">
                         <div className="modal-section">
                             <h4 className="text-lg font-semibold mb-2 border-l-2 border-primary pl-3">Details</h4>
-                            <p className="text-text-light pl-4">{event.fullDetails}</p>
+                            <div 
+                                className="text-text-light pl-4 prose prose-sm prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: event.fullDetails }}
+                            />
                         </div>
 
                         <div className="modal-section">
@@ -63,18 +74,24 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                             </div>
                         </div>
 
-                        {fees.length > 0 && (
-                            <div className="modal-section">
-                                <h4 className="text-lg font-semibold mb-2 border-l-2 border-primary pl-3">Preise & Startgeld</h4>
+                        <div className="modal-section">
+                            <h4 className="text-lg font-semibold mb-2 border-l-2 border-primary pl-3">Preise & Startgeld</h4>
+                            {fees.length > 0 ? (
                                 <ul className="list-none text-text-light pl-4 space-y-1">
                                     {(fees as { name: string; price: number }[]).map((fee) => (
                                         <li key={fee.name} className="flex items-center gap-3">
-                                            <span className="text-primary">♙</span> {fee.name}: ${fee.price}
+                                            <span className="text-primary">♙</span> {fee.name}: {fee.price}€
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="pl-4">
+                                    <p className="flex items-center gap-3 text-green-400 font-medium">
+                                        <span className="text-primary">♙</span> Frei für Alle
+                                    </p>
+                                </div>
+                            )}
+                        </div>
 
                         <div className="modal-section">
                             <h4 className="text-lg font-semibold mb-3 border-l-2 border-primary pl-3">Ort</h4>

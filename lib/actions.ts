@@ -53,7 +53,7 @@ const registrationSchema = z.object({
     verein: z.string().optional(),
     elo: z.coerce.number().min(100, "ELO must be at least 100.").max(3000, "ELO cannot exceed 3000."),
     eventId: z.string(),
-    feeCategory: z.string().min(1, "You must select a fee category."),
+    feeCategory: z.string().optional(),
     agreeToTerms: z.preprocess((val) => val === 'on', z.boolean()).refine(val => val === true, {
       message: "You must agree to the Terms & Conditions and Privacy Policy."
     }),
@@ -72,15 +72,26 @@ const registrationSchema = z.object({
         fields: rawData, 
       };
     }
+
+    // Check if fee category is required
+    const event = await prisma.event.findUnique({ where: { id: validatedFields.data.eventId } });
+    if (!event) {
+      return { type: 'error', message: 'Event not found.' };
+    }
+
+    const eventFees = Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : [];
+    if (eventFees.length > 0 && (!validatedFields.data.feeCategory || validatedFields.data.feeCategory.trim() === '')) {
+      return {
+        type: 'error',
+        errors: { feeCategory: ['You must select a fee category.'] },
+        fields: rawData,
+      };
+    }
   
     // Destructure the new fields
     const { firstName, lastName, email, birthYear, verein, elo, eventId } = validatedFields.data;
   
     try {
-      const event = await prisma.event.findUnique({ where: { id: eventId } });
-      if (!event) {
-          return { type: 'error', message: 'Event not found.' };
-      }
       
       // Check whitelist only for premier events
       if (event.isPremier) {
@@ -137,6 +148,17 @@ const registrationSchema = z.object({
         lastName,
         email,
         eventName: event.title,
+        eventDate: new Date(event.date).toLocaleDateString('de-DE', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        eventLocation: event.location,
+        customEmailText: event.emailText || undefined,
+        organiserEmail: event.organiserEmail || undefined,
     });
   
       revalidatePath('/');
@@ -151,10 +173,14 @@ const registrationSchema = z.object({
     title: z.string().min(5, 'Title must be at least 5 characters.'),
     description: z.string().min(10, 'Description must be at least 10 characters.'),
     fullDetails: z.string().min(20, 'Full details must be at least 20 characters.'),
-    date: z.string().min(5, 'Date is required.'),
+    date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format" }),
     location: z.string().min(5, 'Location is required.'),
     // Zod transform to handle fee string parsing and validation
     fees: z.string().transform((val, ctx) => {
+        // Allow empty string for free events
+        if (!val || val.trim() === '') {
+            return [];
+        }
         try {
             return parseFees(val);
         } catch (e: unknown) {
@@ -166,6 +192,8 @@ const registrationSchema = z.object({
     type: z.enum(['classic', 'blitz', 'scholastic', 'rapid']),
     isPremier: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     customFields: z.string().optional(),
+    emailText: z.string().optional(),
+    organiserEmail: z.string().email({ message: 'Please enter a valid email address.' }).optional().or(z.literal('')),
     pdfFile: z.any().refine(
         (file) => {
             // If no file is uploaded, or it's an empty file, it's valid (optional).
@@ -228,6 +256,7 @@ async function handleEventForm(formData: FormData, eventId?: string) {
 
     const dataToSave = {
         ...eventData,
+        date: new Date(eventData.date),
         pdfUrl,
         isPremier: eventData.isPremier || false,
         registrationEndDate: new Date(eventData.registrationEndDate),

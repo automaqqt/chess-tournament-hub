@@ -16,8 +16,8 @@ const merriweather = Merriweather({
 });
 
 export const metadata: Metadata = {
-  title: "Chess Tournament Hub - The King's Gambit",
-  description: "Browse, filter, and register for upcoming chess tournaments.",
+  title: "Schachturniere Magdeburg",
+  description: "Alle Turniere und Events der Schachzwerge Magdeburg.",
 };
 
 export default function RootLayout({

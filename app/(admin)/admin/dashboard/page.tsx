@@ -15,7 +15,7 @@ export default async function AdminDashboard() {
       },
     },
     orderBy: {
-      createdAt: 'desc'
+      date: 'asc'
     }
   });
 

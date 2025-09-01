@@ -9,7 +9,14 @@ export default async function HomePage() {
         gte: new Date(), // "greater than or equal to" today
       },
     },
-    orderBy: { createdAt: 'desc' }
+    include: {
+      _count: {
+        select: {
+          registrations: true
+        }
+      }
+    },
+    orderBy: { date: 'asc' }
   });
 
   return (

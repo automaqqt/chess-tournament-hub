@@ -2,6 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import type { Event } from '@prisma/client';
+
+type EventWithCount = Event & {
+  _count: {
+    registrations: number;
+  };
+};
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import EventCard from './event-card';
@@ -9,7 +15,7 @@ import { Search } from 'lucide-react';
 
 type FilterType = 'all' | 'premier' | 'blitz';
 
-export default function EventList({ initialEvents }: { initialEvents: Event[] }) {
+export default function EventList({ initialEvents }: { initialEvents: EventWithCount[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 

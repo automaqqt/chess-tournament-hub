@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useMemo, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -190,7 +190,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                             <SelectContent>
                                 {(feeOptions as { name: string; price: number }[]).map((fee) => (
                                     <SelectItem key={fee.name} value={fee.name}>
-                                        {fee.name} - ${fee.price}
+                                        {fee.name} - {fee.price}€
                                     </SelectItem>
                                 ))}
                             </SelectContent>

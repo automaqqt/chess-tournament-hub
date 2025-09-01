@@ -11,7 +11,7 @@ async function main() {
     {
       id: 'czes2025t1',
       title: 'Schachzwerge-Einsteiger-Serie Saison 2025/2026 - Turnier 1',
-      date: 'September 13, 2025',
+      date: new Date('2025-09-13T09:30:00'),
       location: 'Otto-Kobin-Saal, Leipziger Straße 43, 39112 Magdeburg',
       description: 'Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche.',
       fullDetails: 'Format: Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche incl. ein Mini-Turnier für Neueinsteiger. Gruppe 1 Zwerge-Cup: Offen für alle Teilnehmer bis DWZ 1200. Gruppe 2 Däumling-Cup: Für Grundschüler der 1. und 2. Klasse. Gruppe 3 KITA-Cup: Für KITA-Kinder. Gruppe 4 Mini-Turnier: Für Neulinge und Kinder mit sehr wenig Turniererfahrung (max. 4 Turnierteilnahmen bisher) ab 3. Klasse. Modus: Schweizer System-Turnier, 5 Runden, 15 min Bedenkzeit. Anmeldung: 09:00 Uhr – 09:15 Uhr. Turnierstart: 09:30 Uhr. Siegerehrung: Gegen 13:15 Uhr. Wertung: 1. Erzielte Punkte, 2. Buchholz-Wertung. Preise: Gruppensieger Pokal, Platzierte Medaillen. Gesamtwertung im Zwerge- und Däumling-Cup. Startgeld: 7,- Euro pro TeilnehmerIn.',
@@ -24,7 +24,7 @@ async function main() {
     {
       id: 'czes2025t2',
       title: 'Schachzwerge-Einsteiger-Serie Saison 2025/2026 - Turnier 2',
-      date: 'November 15, 2025',
+      date: new Date('2025-11-15T09:30:00'),
       location: 'Otto-Kobin-Saal, Leipziger Straße 43, 39112 Magdeburg',
       description: 'Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche.',
       fullDetails: 'Format: Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche incl. ein Mini-Turnier für Neueinsteiger. Gruppe 1 Zwerge-Cup: Offen für alle Teilnehmer bis DWZ 1200. Gruppe 2 Däumling-Cup: Für Grundschüler der 1. und 2. Klasse. Gruppe 3 KITA-Cup: Für KITA-Kinder. Gruppe 4 Mini-Turnier: Für Neulinge und Kinder mit sehr wenig Turniererfahrung (max. 4 Turnierteilnahmen bisher) ab 3. Klasse. Modus: Schweizer System-Turnier, 5 Runden, 15 min Bedenkzeit. Anmeldung: 09:00 Uhr – 09:15 Uhr. Turnierstart: 09:30 Uhr. Siegerehrung: Gegen 13:15 Uhr. Wertung: 1. Erzielte Punkte, 2. Buchholz-Wertung. Preise: Gruppensieger Pokal, Platzierte Medaillen. Gesamtwertung im Zwerge- und Däumling-Cup. Startgeld: 7,- Euro pro TeilnehmerIn.',
@@ -37,7 +37,7 @@ async function main() {
     {
       id: 'czes2025t3',
       title: 'Schachzwerge-Einsteiger-Serie Saison 2025/2026 - Turnier 3',
-      date: 'February 21, 2026',
+      date: new Date('2026-02-21T09:30:00'),
       location: 'Otto-Kobin-Saal, Leipziger Straße 43, 39112 Magdeburg',
       description: 'Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche.',
       fullDetails: 'Format: Einsteiger-Turnierserie in 4 Gruppen für KITA-Kinder, Kinder und Jugendliche incl. ein Mini-Turnier für Neueinsteiger. Gruppe 1 Zwerge-Cup: Offen für alle Teilnehmer bis DWZ 1200. Gruppe 2 Däumling-Cup: Für Grundschüler der 1. und 2. Klasse. Gruppe 3 KITA-Cup: Für KITA-Kinder. Gruppe 4 Mini-Turnier: Für Neulinge und Kinder mit sehr wenig Turniererfahrung (max. 4 Turnierteilnahmen bisher) ab 3. Klasse. Modus: Schweizer System-Turnier, 5 Runden, 15 min Bedenkzeit. Anmeldung: 09:00 Uhr – 09:15 Uhr. Turnierstart: 09:30 Uhr. Siegerehrung: Gegen 13:15 Uhr. Wertung: 1. Erzielte Punkte, 2. Buchholz-Wertung. Preise: Gruppensieger Pokal, Platzierte Medaillen. Gesamtwertung im Zwerge- und Däumling-Cup. Startgeld: 7,- Euro pro TeilnehmerIn.',

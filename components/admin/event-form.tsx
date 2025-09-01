@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, X } from 'lucide-react';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import type { Event } from '@prisma/client';
 
 // Define a proper type for the form state that matches what your actions return
@@ -30,6 +32,8 @@ type FormState = {
     customFields?: string[];
     registrationEndDate?: string[];
     pdfFile?: string[];
+    organiserEmail?: string[];
+    emailText?: string[];
   };
   fields?: {
     [key: string]: FormDataEntryValue;
@@ -49,7 +53,7 @@ const feesToString = (fees: { name: string; price: number }[]) => {
 
 function SubmitButton({ isEditing }: { isEditing: boolean }) {
   const { pending } = useFormStatus();
-  return <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? (isEditing ? 'Speichern...' : 'Erstellen...') : (isEditing ? 'Änderungen speichern' : 'Veranstaltung erstellen')}</Button>;
+  return <Button type="submit" variant={"outline"} disabled={pending} className="w-full sm:w-auto">{pending ? (isEditing ? 'Speichern...' : 'Erstellen...') : (isEditing ? 'Änderungen speichern' : 'Veranstaltung erstellen')}</Button>;
 }
 
 export default function EventForm({ event }: { event?: Event }) {
@@ -70,8 +74,13 @@ export default function EventForm({ event }: { event?: Event }) {
   // Initialize with event data for editing, or defaults for creating
   const [formData, setFormData] = useState(event || {
     title: '', description: '', fullDetails: '', date: '', location: '',
-    entryFee: 0, type: 'classic', isPremier: false, customFields: ''
+    entryFee: 0, type: 'classic', isPremier: false, customFields: '', emailText: '', organiserEmail: ''
   });
+
+  // Separate state for fees management
+  const [fees, setFees] = useState<{ name: string; price: number }[]>(
+    event?.fees ? (Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : []) : []
+  );
 
   useEffect(() => {
     if (state.type === 'error') {
@@ -89,6 +98,24 @@ export default function EventForm({ event }: { event?: Event }) {
     setFormData(prev => ({...prev, [name]: isCheckbox ? (e.target as HTMLInputElement).checked : value }));
   };
 
+  const addFee = () => {
+    setFees(prev => [...prev, { name: '', price: 0 }]);
+  };
+
+  const removeFee = (index: number) => {
+    setFees(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateFee = (index: number, field: 'name' | 'price', value: string | number) => {
+    setFees(prev => prev.map((fee, i) => 
+      i === index ? { ...fee, [field]: field === 'price' ? Number(value) : value } : fee
+    ));
+  };
+
+  const handleRichTextChange = (content: string) => {
+    setFormData(prev => ({...prev, fullDetails: content}));
+  };
+
   return (
     <form action={dispatch} className="space-y-6">
       <div className="space-y-2">
@@ -99,8 +126,14 @@ export default function EventForm({ event }: { event?: Event }) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-            <Label htmlFor="date">Datum</Label>
-            <Input id="date" name="date" placeholder="e.g., January 1-3, 2025" value={formData.date} onChange={handleChange} />
+            <Label htmlFor="date">Datum und Uhrzeit</Label>
+            <Input 
+              id="date" 
+              name="date" 
+              type="datetime-local" 
+              value={event?.date ? new Date(event.date).toISOString().slice(0, 16) : (typeof formData.date === 'string' ? formData.date : '')} 
+              onChange={handleChange} 
+            />
             {state.errors?.date && <p className="text-red-500 text-sm">{state.errors.date[0]}</p>}
         </div>
         <div className="space-y-2">
@@ -117,8 +150,13 @@ export default function EventForm({ event }: { event?: Event }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="fullDetails">Vollständige Details (für Modal)</Label>
-        <Textarea id="fullDetails" name="fullDetails" rows={5} value={formData.fullDetails} onChange={handleChange} />
+        <Label>Vollständige Details (für Modal)</Label>
+        <RichTextEditor
+          content={formData.fullDetails || ''}
+          onChange={handleRichTextChange}
+          placeholder="Detaillierte Informationen über die Veranstaltung..."
+        />
+        <input type="hidden" name="fullDetails" value={formData.fullDetails} />
         {state.errors?.fullDetails && <p className="text-red-500 text-sm">{state.errors.fullDetails[0]}</p>}
       </div>
 
@@ -144,11 +182,52 @@ export default function EventForm({ event }: { event?: Event }) {
       </div>
 
       <div className="space-y-2">
-                <Label htmlFor="fees">Startgeld-Kategorien</Label>
-                <Textarea id="fees" name="fees" placeholder="e.g., Adult:50, Junior:30, Student:25" defaultValue={feesToString(event?.fees as { name: string; price: number }[] || [])} />
-                <p className="text-sm text-muted-foreground">Format: Kategoriename:Preis, weitere:Preis. Keine Währungszeichen.</p>
-                {state.errors?.fees && <p className="text-red-500 text-sm">{state.errors.fees[0]}</p>}
+        <Label>Startgeld-Kategorien</Label>
+        <div className="space-y-3">
+          {fees.map((fee, index) => (
+            <div key={index} className="flex gap-3 items-center">
+              <Input
+                placeholder="Kategoriename (z.B. Erwachsene)"
+                value={fee.name}
+                onChange={(e) => updateFee(index, 'name', e.target.value)}
+                className="flex-1"
+              />
+              <Input
+                type="number"
+                placeholder="Preis"
+                value={fee.price}
+                onChange={(e) => updateFee(index, 'price', e.target.value)}
+                className="w-24"
+                min="0"
+              />
+              <span className="text-sm text-muted-foreground">€</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeFee(index)}
+                className="px-2"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addFee}
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Startgeld-Kategorie hinzufügen
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">Leer lassen für kostenlose Veranstaltung.</p>
+        {state.errors?.fees && <p className="text-red-500 text-sm">{state.errors.fees[0]}</p>}
+        
+        {/* Hidden input to submit fees data */}
+        <input type="hidden" name="fees" value={feesToString(fees)} />
+      </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
@@ -167,9 +246,41 @@ export default function EventForm({ event }: { event?: Event }) {
         {state.errors?.customFields && <p className="text-red-500 text-sm">{state.errors.customFields[0]}</p>}
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="emailText">E-Mail-Bestätigungstext</Label>
+        <Textarea 
+          id="emailText" 
+          name="emailText" 
+          rows={6}
+          value={formData.emailText} 
+          onChange={handleChange}
+          placeholder="Individueller Text für die Anmeldungsbestätigung. Leer lassen für Standard-E-Mail."
+        />
+        <p className="text-sm text-muted-foreground">
+          Verfügbare Platzhalter: {"{firstName}"}, {"{lastName}"}, {"{eventTitle}"}, {"{eventDate}"}, {"{eventLocation}"}
+        </p>
+        {state.errors?.emailText && <p className="text-red-500 text-sm">{state.errors.emailText[0]}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="organiserEmail">Organisator-E-Mail (BCC)</Label>
+        <Input 
+          id="organiserEmail" 
+          name="organiserEmail" 
+          type="email"
+          value={formData.organiserEmail || ''} 
+          onChange={handleChange}
+          placeholder="organisator@beispiel.de"
+        />
+        <p className="text-sm text-muted-foreground">
+          Optional. Diese E-Mail-Adresse erhält eine Kopie jeder Anmeldung als BCC.
+        </p>
+        {state.errors?.organiserEmail && <p className="text-red-500 text-sm">{state.errors.organiserEmail[0]}</p>}
+      </div>
+
       <div className="flex items-center space-x-2">
         <Checkbox id="isPremier" name="isPremier" checked={!!formData.isPremier} onCheckedChange={(checked) => setFormData(prev => ({...prev, isPremier: !!checked}))} />
-        <Label htmlFor="isPremier" className="text-sm font-medium leading-none">Als Premier-Veranstaltung markieren</Label>
+        <Label htmlFor="isPremier" className="text-sm font-medium leading-none">Als interne Schachzwerge Veranstaltung markieren</Label>
       </div>
 
       <div className="flex justify-end"><SubmitButton isEditing={isEditing} /></div>
