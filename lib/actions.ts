@@ -109,7 +109,7 @@ const registrationSchema = z.object({
     }
   
     // Destructure the new fields
-    const { firstName, lastName, email, birthYear, verein, elo, eventId } = validatedFields.data;
+    const { firstName, lastName, email, birthYear, verein, elo, eventId, feeCategory } = validatedFields.data;
   
     try {
       
@@ -125,7 +125,9 @@ const registrationSchema = z.object({
         }
       }
       
-      if (new Date() > event.registrationEndDate) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() - 1);
+      if (tomorrow > event.registrationEndDate) {
         return { type: 'error', message: 'The registration deadline for this event has passed.' };
     }
   
@@ -158,6 +160,7 @@ const registrationSchema = z.object({
           birthYear,
           verein: verein || 'N/A',
           elo: elo ? parseInt(elo) : 0,
+          feeCategory: feeCategory || 'Standard',
           eventId,
           additionalInfo,
         },
@@ -280,7 +283,7 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         date: new Date(eventData.date),
         pdfUrl,
         isPremier: eventData.isPremier || false,
-        isEloRequired: eventData.isEloRequired !== undefined ? eventData.isEloRequired : true,
+        isEloRequired: eventData.isEloRequired !== undefined ? eventData.isEloRequired : false,
         registrationEndDate: new Date(eventData.registrationEndDate),
     };
 

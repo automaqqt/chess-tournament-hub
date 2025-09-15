@@ -23,16 +23,27 @@ export async function GET(
       return new NextResponse('Event not found', { status: 404 });
     }
 
-    const dataToExport = event.registrations.map(reg => ({
-      'Registration ID': reg.id,
-      'First Name': reg.firstName,
-      'Last Name': reg.lastName,
-      'Email': reg.email,
-      'Birth Year': reg.birthYear,
-      'ELO': reg.elo,
-      'Verein': reg.verein,
-      'Registered At': reg.createdAt.toISOString(),
-    }));
+    const dataToExport = event.registrations.map(reg => {
+      const baseData: Record<string, string | number> = {
+        'Vorname': reg.firstName,
+        'Nachname': reg.lastName,
+        'E-Mail': reg.email,
+        'Geburtsjahr': reg.birthYear,
+        'ELO': reg.elo,
+        'Verein': reg.verein,
+        'Startgeld-Kategorie': reg.feeCategory || '',
+        'Anmeldung am': reg.createdAt.toLocaleDateString('de-DE'),
+      };
+
+      if (reg.additionalInfo && typeof reg.additionalInfo === 'object') {
+        const additionalFields = reg.additionalInfo as Record<string, string | number | boolean>;
+        Object.keys(additionalFields).forEach(key => {
+          baseData[key] = String(additionalFields[key]);
+        });
+      }
+
+      return baseData;
+    });
 
     const csv = Papa.unparse(dataToExport);
 

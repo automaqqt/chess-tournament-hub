@@ -50,7 +50,7 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
             <TableRow key={event.id} className="hover:bg-zinc-800 border-zinc-800">
               <TableCell className="font-medium">
                 {event.title}{' '}
-                {event.isPremier && <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary">Premier</Badge>}
+                {event.isPremier && <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary">Intern</Badge>}
               </TableCell>
               <TableCell className="text-center">{event._count.registrations}</TableCell>
               

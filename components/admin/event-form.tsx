@@ -75,7 +75,7 @@ export default function EventForm({ event }: { event?: Event }) {
   // Initialize with event data for editing, or defaults for creating
   const [formData, setFormData] = useState(event || {
     title: '', description: '', fullDetails: '', date: '', location: '',
-    entryFee: 0, type: 'classic', isPremier: false, isEloRequired: true, customFields: '', emailText: '', organiserEmail: ''
+    entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '', emailText: '', organiserEmail: ''
   });
 
   // Separate state for fees management

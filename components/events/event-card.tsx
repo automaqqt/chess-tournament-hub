@@ -9,7 +9,7 @@ type EventWithCount = Event & {
 };
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock } from 'lucide-react';
 import Image from 'next/image';
 import EventDetailsModal from './event-detail-modal';
 
@@ -59,6 +59,19 @@ export default function EventCard({ event }: { event: EventWithCount }) {
             </div>
             <span className="group-hover:text-gray-200 transition-colors duration-300">
               {event._count.registrations} Anmeldung{event._count.registrations !== 1 ? 'en' : ''}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors duration-300">
+              <Clock className="h-3 w-3 text-orange-500" />
+            </div>
+            <span className="group-hover:text-gray-200 transition-colors duration-300 text-sm">
+              Anmeldung bis: {new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </span>
           </div>
         </div>
