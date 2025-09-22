@@ -2,19 +2,11 @@
 
 import prisma from "@/lib/db";
 import { notFound } from "next/navigation";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import RegistrationsTable from "@/components/admin/registrations-table";
 
 type PageProps = {
   params: Promise<{
@@ -70,44 +62,11 @@ export default async function EventRegistrationsPage({ params }: PageProps) {
               <p>Noch niemand hat sich für diese Veranstaltung angemeldet.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>E-Mail</TableHead>
-                    <TableHead>Geburtsjahr</TableHead>
-                    <TableHead>Verein</TableHead>
-                    <TableHead>ELO</TableHead>
-                    {/* Dynamically add headers for custom fields */}
-                    {customFieldHeaders.map(header => (
-                      <TableHead key={header}>{header}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {event.registrations.map((reg, index) => (
-                    <TableRow key={reg.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">{reg.firstName} {reg.lastName}</TableCell>
-                      <TableCell>{reg.email}</TableCell>
-                      <TableCell>{reg.birthYear}</TableCell>
-                      <TableCell>{reg.verein}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{reg.elo}</Badge>
-                      </TableCell>
-                      {/* Dynamically add cells for custom field data */}
-                      {customFieldHeaders.map(header => (
-                        <TableCell key={header}>
-                          {String((reg.additionalInfo as Record<string, unknown>)?.[header] || 'N/A')}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <RegistrationsTable 
+              registrations={event.registrations}
+              eventId={event.id}
+              customFieldHeaders={customFieldHeaders}
+            />
           )}
         </CardContent>
       </Card>

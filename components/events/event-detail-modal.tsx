@@ -23,12 +23,10 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
     const isRegistrationOpen = tomorrow < new Date(event.registrationEndDate);
     const mapEmbedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
     const fees = Array.isArray(event.fees) ? event.fees : [];
-    const registrationEndDate = new Date(event.registrationEndDate).toLocaleDateString('en-US', {
+    const registrationEndDate = new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
     });
 
     return (

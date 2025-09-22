@@ -73,9 +73,19 @@ export default function EventForm({ event }: { event?: Event }) {
 
   // --- NEW: Local state to control form inputs ---
   // Initialize with event data for editing, or defaults for creating
-  const [formData, setFormData] = useState(event || {
-    title: '', description: '', fullDetails: '', date: '', location: '',
-    entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '', emailText: '', organiserEmail: ''
+  const [formData, setFormData] = useState(() => {
+    if (event) {
+      return {
+        ...event,
+        date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
+      };
+    }
+    return {
+      title: '', description: '', fullDetails: '', date: '', location: '',
+      entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '', 
+      emailText: 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n\nBei Fragen können Sie uns jederzeit erreichen, indem Sie einfach auf diese E-Mail antworten.',
+      organiserEmail: ''
+    };
   });
 
   // Separate state for fees management
@@ -85,7 +95,7 @@ export default function EventForm({ event }: { event?: Event }) {
 
   useEffect(() => {
     if (state.type === 'error') {
-      if (state.message) toast.error(state.message);
+      if (state.message) toast.error(state.message, { duration: 10000 });
       // --- NEW: Repopulate form on error ---
       if (state.fields) {
         setFormData(prev => ({ ...prev, ...state.fields }));
@@ -132,7 +142,7 @@ export default function EventForm({ event }: { event?: Event }) {
               id="date" 
               name="date" 
               type="datetime-local" 
-              value={event?.date ? new Date(event.date).toISOString().slice(0, 16) : (typeof formData.date === 'string' ? formData.date : '')} 
+              value={formData.date || ''} 
               onChange={handleChange} 
             />
             {state.errors?.date && <p className="text-red-500 text-sm">{state.errors.date[0]}</p>}
@@ -248,17 +258,17 @@ export default function EventForm({ event }: { event?: Event }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="emailText">E-Mail-Bestätigungstext</Label>
+        <Label htmlFor="emailText">Zusätzlicher E-Mail-Text</Label>
         <Textarea 
           id="emailText" 
           name="emailText" 
-          rows={6}
+          rows={4}
           value={formData.emailText} 
           onChange={handleChange}
-          placeholder="Individueller Text für die Anmeldungsbestätigung. Leer lassen für Standard-E-Mail."
+          placeholder="Zusätzlicher Text für die Anmeldungsbestätigung..."
         />
         <p className="text-sm text-muted-foreground">
-          Verfügbare Platzhalter: {"{firstName}"}, {"{lastName}"}, {"{eventTitle}"}, {"{eventDate}"}, {"{eventLocation}"}
+          Dieser Text wird zwischen den Veranstaltungsinformationen und den Zahlungsdaten eingefügt.<br/>
         </p>
         {state.errors?.emailText && <p className="text-red-500 text-sm">{state.errors.emailText[0]}</p>}
       </div>

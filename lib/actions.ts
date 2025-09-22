@@ -57,6 +57,7 @@ const registrationSchema = z.object({
     agreeToTerms: z.preprocess((val) => val === 'on', z.boolean()).refine(val => val === true, {
       message: "You must agree to the Terms & Conditions and Privacy Policy."
     }),
+    isPubliclyVisible: z.preprocess((val) => val === 'on', z.boolean()).optional(),
   });
   
   
@@ -109,7 +110,7 @@ const registrationSchema = z.object({
     }
   
     // Destructure the new fields
-    const { firstName, lastName, email, birthYear, verein, elo, eventId, feeCategory } = validatedFields.data;
+    const { firstName, lastName, email, birthYear, verein, elo, eventId, feeCategory, isPubliclyVisible } = validatedFields.data;
   
     try {
       
@@ -131,23 +132,42 @@ const registrationSchema = z.object({
         return { type: 'error', message: 'The registration deadline for this event has passed.' };
     }
   
-      const existingRegistration = await prisma.registration.findUnique({
-        where: { email_eventId: { email, eventId } },
+      const existingRegistrations = await prisma.registration.findMany({
+        where: { 
+          email: email,
+          eventId: eventId 
+        },
       });
   
-      if (existingRegistration) {
-        return { type: 'error', message: 'You are already registered for this event with this email.' };
+      if (existingRegistrations.length >= 5) {
+        return { type: 'error', message: 'Maximale Anzahl von 5 Anmeldungen pro E-Mail-Adresse für diese Veranstaltung erreicht. Weitere Meldungen bitte per Mail an meldung@schachzwerge-magdeburg.de' };
       }
       
-      // ... (additionalInfo logic remains the same) ...
+      // Validate and collect additional info - all fields are mandatory
       const additionalInfo: { [key: string]: string } = {};
       if (event.customFields) {
           const customFieldKeys = event.customFields.split(',').map(f => f.trim());
+          const missingFields: string[] = [];
+          
           for (const key of customFieldKeys) {
               const value = formData.get(key) as string;
-              if (value) {
-                  additionalInfo[key] = value;
+              if (!value || value.trim() === '') {
+                  missingFields.push(key);
+              } else {
+                  additionalInfo[key] = value.trim();
               }
+          }
+          
+          if (missingFields.length > 0) {
+              const fieldErrors: Record<string, string[]> = {};
+              missingFields.forEach(field => {
+                  fieldErrors[field] = [`${field} ist erforderlich.`];
+              });
+              return {
+                  type: 'error',
+                  errors: fieldErrors,
+                  fields: rawData,
+              };
           }
       }
   
@@ -163,6 +183,7 @@ const registrationSchema = z.object({
           feeCategory: feeCategory || 'Standard',
           eventId,
           additionalInfo,
+          isPubliclyVisible: isPubliclyVisible !== undefined ? isPubliclyVisible : true,
         },
       });
 
@@ -185,10 +206,10 @@ const registrationSchema = z.object({
     });
   
       revalidatePath('/');
-      return { type: 'success', message: 'Registration successful!' };
+      return { type: 'success', message: 'Anmeldung erfolgreich!' };
     } catch (error) {
       console.error('Registration error:', error);
-      return { type: 'error', message: 'Something went wrong. Please try again.' };
+      return { type: 'error', message: 'Irgendwas ist schief, versuch es erneut.' };
     }
   }
 
@@ -242,6 +263,36 @@ async function handleEventForm(formData: FormData, eventId?: string) {
 
     if (!validatedFields.success) {
         return { type: 'error', errors: validatedFields.error.flatten().fieldErrors, fields: rawData };
+    }
+
+    // Validate that dates are in the future
+    const now = new Date();
+    const eventDate = new Date(validatedFields.data.date);
+    const registrationEndDate = new Date(validatedFields.data.registrationEndDate);
+
+    if (eventDate <= now) {
+        return {
+            type: 'error',
+            errors: { date: ['Das Veranstaltungsdatum muss in der Zukunft liegen.'] },
+            fields: rawData
+        };
+    }
+
+    if (registrationEndDate <= now) {
+        return {
+            type: 'error',
+            errors: { registrationEndDate: ['Der Anmeldeschluss muss in der Zukunft liegen.'] },
+            fields: rawData
+        };
+    }
+
+    // Additional validation: registration end date should be before or equal to event date
+    if (registrationEndDate > eventDate) {
+        return {
+            type: 'error',
+            errors: { registrationEndDate: ['Der Anmeldeschluss muss vor oder am Veranstaltungsdatum liegen.'] },
+            fields: rawData
+        };
     }
 
     const { pdfFile, ...eventData } = validatedFields.data;
@@ -330,4 +381,20 @@ export async function deleteEvent(eventId: string) {
 
     revalidatePath('/');
     revalidatePath('/admin/dashboard');
+}
+
+// --- NEW: Delete Registration Action ---
+export async function deleteRegistration(registrationId: string, eventId: string) {
+    try {
+        await prisma.registration.delete({
+            where: { id: registrationId },
+        });
+    } catch (error) {
+        console.error('Registration deletion error:', error);
+        return { type: 'error', message: 'Database error. Could not delete registration.' };
+    }
+
+    revalidatePath('/');
+    revalidatePath('/admin/dashboard');
+    revalidatePath(`/admin/dashboard/events/${eventId}`);
 }

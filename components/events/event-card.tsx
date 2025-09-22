@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Users, Clock } from 'lucide-react';
 import Image from 'next/image';
 import EventDetailsModal from './event-detail-modal';
+import RegistrationListModal from './registration-list-modal';
 
 const PremierStamp = () => (
   <div className="premier-stamp">
@@ -57,9 +58,11 @@ export default function EventCard({ event }: { event: EventWithCount }) {
             <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300">
               <Users className="h-3 w-3 text-green-500" />
             </div>
-            <span className="group-hover:text-gray-200 transition-colors duration-300">
-              {event._count.registrations} Anmeldung{event._count.registrations !== 1 ? 'en' : ''}
-            </span>
+            <RegistrationListModal eventId={event.id} registrationCount={event._count.registrations}>
+              <span className="group-hover:text-gray-200 transition-colors duration-300 cursor-pointer hover:text-primary hover:underline underline-offset-2 decoration-primary/50 hover:decoration-primary transition-all duration-200">
+                {event._count.registrations} Anmeldung{event._count.registrations !== 1 ? 'en' : ''}
+              </span>
+            </RegistrationListModal>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors duration-300">
@@ -69,8 +72,6 @@ export default function EventCard({ event }: { event: EventWithCount }) {
               Anmeldung bis: {new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
                 day: 'numeric',
                 month: 'short',
-                hour: '2-digit',
-                minute: '2-digit'
               })}
             </span>
           </div>

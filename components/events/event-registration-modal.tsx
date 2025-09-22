@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, useActionState } from 'react';
+import React, { useEffect, useState, useMemo, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,9 @@ const initialFormValues = {
     birthYear: '',
     elo: '',
     verein: '',
+    feeCategory: '',
     agreeToTerms: false,
+    isPubliclyVisible: true,
 };
 
 function SubmitButton() {
@@ -50,6 +52,8 @@ export default function RegistrationModal({ event, children }: { event: Event; c
   const [state, formAction] = useActionState(registerForEvent, initialFormState);
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [isConfirmedSubmit, setIsConfirmedSubmit] = useState(false);
   const feeOptions = useMemo(() => {
     return Array.isArray(event.fees) ? event.fees : [];
   }, [event.fees]);
@@ -62,7 +66,9 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     birthYear: string;
     elo: string;
     verein: string;
+    feeCategory: string;
     agreeToTerms: boolean;
+    isPubliclyVisible: boolean;
     [key: string]: string | boolean; // For dynamic custom fields
   };
   const [formValues, setFormValues] = useState<FormValues>(initialFormValues as FormValues);
@@ -70,13 +76,14 @@ export default function RegistrationModal({ event, children }: { event: Event; c
   useEffect(() => {
     if (state.type === 'success') {
       if ('message' in state) {
-        toast.success(state.message);
+        toast.success(state.message, { duration: 10000 });
       }
       setIsOpen(false);
       setFormValues(initialFormValues); // Reset form on success
+      setIsConfirmedSubmit(false); // Reset confirmation flag
     } else if (state.type === 'error') {
       if ('message' in state && state.message) {
-        toast.error(state.message);
+        toast.error(state.message, { duration: 10000 });
       }
       // --- NEW: Repopulate form with previous values on error ---
       if ('fields' in state && state.fields) {
@@ -93,6 +100,14 @@ export default function RegistrationModal({ event, children }: { event: Event; c
 
   const handleCheckboxChange = (checked: boolean) => {
     setFormValues(prev => ({ ...prev, agreeToTerms: checked }));
+  };
+
+  const handlePrivacyCheckboxChange = (checked: boolean) => {
+    setFormValues(prev => ({ ...prev, isPubliclyVisible: checked }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormValues(prev => ({ ...prev, feeCategory: value }));
   };
 
   // Check if form has been started (any field filled)
@@ -119,11 +134,37 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     setShowConfirmClose(false);
     setIsOpen(false);
     setFormValues(initialFormValues);
+    setIsConfirmedSubmit(false); // Reset confirmation flag
   };
 
   // Cancel close confirmation
   const cancelClose = () => {
     setShowConfirmClose(false);
+  };
+
+  // Handle form submission with confirmation
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (!isConfirmedSubmit) {
+      e.preventDefault();
+      setShowConfirmSubmit(true);
+    }
+    // If isConfirmedSubmit is true, let the form submit naturally
+  };
+
+  // Confirm and actually submit the form
+  const confirmSubmit = () => {
+    setShowConfirmSubmit(false);
+    setIsConfirmedSubmit(true);
+    // Trigger the form submission programmatically
+    const form = document.getElementById('registration-form') as HTMLFormElement;
+    if (form) {
+      form.requestSubmit();
+    }
+  };
+
+  // Cancel confirmation
+  const cancelSubmit = () => {
+    setShowConfirmSubmit(false);
   };
   
   const customFields = useMemo(() => {
@@ -141,9 +182,10 @@ export default function RegistrationModal({ event, children }: { event: Event; c
           <DialogDescription>Füllen Sie das Formular aus, um sich anzumelden.</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-6">
-          <form action={formAction}>
+          <form id="registration-form" action={formAction} onSubmit={handleSubmit}>
             <input type="hidden" name="eventId" value={event.id} />
             <input type="hidden" name="agreeToTerms" value={formValues.agreeToTerms ? 'on' : 'off'} />
+            <input type="hidden" name="isPubliclyVisible" value={formValues.isPubliclyVisible ? 'on' : 'off'} />
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -193,7 +235,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
               {feeOptions.length > 0 && (
                     <div className="space-y-2">
                         <Label htmlFor="feeCategory">Startgeld-Kategorie</Label>
-                        <Select name="feeCategory" defaultValue={state.fields?.feeCategory as string | undefined}>
+                        <Select name="feeCategory" value={formValues.feeCategory} onValueChange={handleSelectChange}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Kategorie auswählen..." />
                             </SelectTrigger>
@@ -229,18 +271,35 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                 </div>
               )}
 
-              <div className="flex items-center space-x-2 pt-4 mt-4 border-t border-zinc-700">
-                <Checkbox 
-                  id="agreeToTerms" 
-                  name="agreeToTerms"
-                  checked={formValues.agreeToTerms}
-                  onCheckedChange={handleCheckboxChange}
-                />
-                <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed">
-                  Ich stimme AGB und Datenschutzerklärung zu
-                </Label>
+              <div className="pt-4 mt-4 border-t border-zinc-700 space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="isPubliclyVisible" 
+                    name="isPubliclyVisible"
+                    checked={formValues.isPubliclyVisible}
+                    onCheckedChange={handlePrivacyCheckboxChange}
+                  />
+                  <Label htmlFor="isPubliclyVisible" className="text-sm leading-relaxed">
+                    Meine Anmeldung darf in der öffentlichen Teilnehmerliste angezeigt werden
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Wenn deaktiviert, bleibt Ihre Anmeldung privat und wird nicht in der öffentlichen Liste der Teilnehmer angezeigt.
+                </p>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="agreeToTerms" 
+                    name="agreeToTerms"
+                    checked={formValues.agreeToTerms}
+                    onCheckedChange={handleCheckboxChange}
+                  />
+                  <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed">
+                    Ich stimme AGB und Datenschutzerklärung zu
+                  </Label>
+                </div>
+                {state.errors?.agreeToTerms && <p className="text-red-500 text-sm">{state.errors.agreeToTerms[0]}</p>}
               </div>
-              {state.errors?.agreeToTerms && <p className="text-red-500 text-sm">{state.errors.agreeToTerms[0]}</p>}
             </div>
             
             <DialogFooter className="mt-4">
@@ -273,6 +332,71 @@ export default function RegistrationModal({ event, children }: { event: Event; c
           </Button>
           <Button variant="destructive" onClick={confirmClose}>
             Ja, abbrechen
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Confirmation Submit Dialog */}
+    <Dialog open={showConfirmSubmit} onOpenChange={setShowConfirmSubmit}>
+      <DialogContent className="sm:max-w-md bg-zinc-900/80 border-zinc-800 backdrop-blur-lg text-white">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-merriweather text-primary">Anmeldung bestätigen</DialogTitle>
+          <DialogDescription>
+            Bitte überprüfen Sie Ihre Angaben vor der finalen Anmeldung.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Vorname:</strong></div>
+            <div>{formValues.firstName}</div>
+            <div><strong>Nachname:</strong></div>
+            <div>{formValues.lastName}</div>
+            <div><strong>E-Mail:</strong></div>
+            <div>{formValues.email}</div>
+            <div><strong>Geburtsjahr:</strong></div>
+            <div>{formValues.birthYear}</div>
+            {event.isEloRequired && (
+              <>
+                <div><strong>ELO-Zahl:</strong></div>
+                <div>{formValues.elo || 'Nicht angegeben'}</div>
+              </>
+            )}
+            <div><strong>Verein:</strong></div>
+            <div>{formValues.verein || 'Nicht angegeben'}</div>
+            {feeOptions.length > 0 && (
+              <>
+                <div><strong>Startgeld-Kategorie:</strong></div>
+                <div>{formValues.feeCategory || 'Keine Auswahl'}</div>
+              </>
+            )}
+            
+          </div>
+          
+          {customFields.length > 0 && (
+            <div className="border-t border-zinc-700 pt-4">
+              <h4 className="font-semibold text-text-light mb-2">Zusätzliche Informationen:</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {customFields.map(field => (
+                  <React.Fragment key={field}>
+                    <div><strong>{field}:</strong></div>
+                    <div>{String(formValues[field] || 'Nicht angegeben')}</div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="default" onClick={cancelSubmit}>
+            Zurück zum Formular
+          </Button>
+          <Button variant="outline" onClick={confirmSubmit}>
+            Ja, Anmeldung absenden
           </Button>
         </DialogFooter>
       </DialogContent>

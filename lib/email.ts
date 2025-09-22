@@ -38,38 +38,37 @@ function replacePlaceholders(text: string, payload: RegistrationEmailPayload): s
 
 // 3. Function to create the HTML content for the email
 function getRegistrationEmailHtml(payload: RegistrationEmailPayload): string {
-  // If custom email text is provided, use it with placeholder replacement
-  if (payload.customEmailText && payload.customEmailText.trim()) {
-    const customContent = replacePlaceholders(payload.customEmailText, payload);
-    return `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2 style="color: #d4af37;">Anmeldung bestätigt!</h2>
-        <div style="white-space: pre-line;">${customContent}</div>
-      </div>
-    `;
-  }
+  // Get custom text or use default
+  const customText = payload.customEmailText && payload.customEmailText.trim() 
+    ? replacePlaceholders(payload.customEmailText, payload)
+    : 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n\nBei Fragen können Sie uns jederzeit erreichen unter meldung@schachzwerge-magdeburg.de.';
 
-  // Default email template
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-  <h2 style="color: #d4af37;">Anmeldung bestätigt!</h2>
-  <p>Sehr geehrte/r ${payload.firstName} ${payload.lastName},</p>
-  <br>
-  <p>vielen Dank für Ihre Anmeldung zum folgenden Schachturnier:</p>
-  <p style="font-size: 1.2em; font-weight: bold; color: #1a1a1a;">${payload.eventName}</p>
-  <p>Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.</p>
-  <p>Bei Fragen können Sie uns jederzeit erreichen, indem Sie einfach auf diese E-Mail antworten.</p>
-  <br>
-  <p style="font-size: 1.1em; font-weight: bold; color: #1a1a1a;">
-    Zahlungsinformationen:<br>
-    IBAN: DE14 8306 5408 0004 9859 82<br>
-    BIC: GENODEF1SLR<br>
-    Kontoinhaber: Schachzwerge Magdeburg e. V.<br>
-    Bank: Deutsche Skatbank
-  </p>
-  <p>Mit freundlichen Grüßen,</p>
-  <p><strong>Ihr Team der Schachzwerge Magdeburg e.V.</strong></p>
-</div>
+      <h2 style="color: #d4af37;">Anmeldung bestätigt!</h2>
+      <p>Sehr geehrte/r ${payload.firstName} ${payload.lastName},</p>
+      <br>
+      <p>vielen Dank für Ihre Anmeldung zum folgenden Schachturnier:</p>
+      <p style="font-size: 1.2em; font-weight: bold; color: #1a1a1a;">${payload.eventName}</p>
+      ${payload.eventDate ? `<p><strong>Datum:</strong> ${payload.eventDate}</p>` : ''}
+      ${payload.eventLocation ? `<p><strong>Ort:</strong> ${payload.eventLocation}</p>` : ''}
+      <br>
+      <div style="white-space: pre-line;">${customText}</div>
+      <br>
+      <br>
+      <p>Bei Fragen senden Sie gerne eine Mail an meldung@schachzwerge-magdeburg.de</p>
+      <br>
+      <p>Mit freundlichen Grüßen,</p>
+      <p><strong>Ihr Team der Schachzwerge Magdeburg e.V.</strong></p>
+
+      <p style="font-size: 1.1em; font-weight: bold; color: #1a1a1a;">
+        Bankverbindung:<br>
+        IBAN: DE14 8306 5408 0004 9859 82<br>
+        BIC: GENODEF1SLR<br>
+        Kontoinhaber: Schachzwerge Magdeburg e. V.<br>
+        Bank: Deutsche Skatbank
+      </p>
+    </div>
   `;
 }
 

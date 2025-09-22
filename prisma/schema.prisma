@@ -40,10 +40,9 @@ model Registration {
   elo       Int
   feeCategory String   @default("Standard") // To store which fee the user selected
   additionalInfo Json  
+  isPubliclyVisible Boolean @default(true) // Whether the registration should be visible in public lists
   
   event     Event    @relation(fields: [eventId], references: [id])
   eventId   String
   createdAt DateTime @default(now())
-
-  @@unique([email, eventId])
 }
