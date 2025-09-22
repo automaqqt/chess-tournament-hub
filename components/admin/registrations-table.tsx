@@ -13,6 +13,8 @@ import { Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { deleteRegistration } from "@/lib/actions";
 
+import { JsonValue } from '@prisma/client/runtime/library';
+
 type Registration = {
   id: string;
   firstName: string;
@@ -22,7 +24,7 @@ type Registration = {
   verein: string;
   elo: number;
   isPubliclyVisible: boolean;
-  additionalInfo: Record<string, unknown>;
+  additionalInfo: JsonValue;
 };
 
 type RegistrationsTableProps = {
@@ -74,7 +76,7 @@ export default function RegistrationsTable({ registrations, eventId, customField
               </TableCell>
               {customFieldHeaders.map(header => (
                 <TableCell key={header}>
-                  {String(reg.additionalInfo?.[header] || 'N/A')}
+                  {String((reg.additionalInfo as Record<string, unknown>)?.[header] || 'N/A')}
                 </TableCell>
               ))}
               <TableCell className="text-right">
