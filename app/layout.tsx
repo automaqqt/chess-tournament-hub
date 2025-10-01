@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Merriweather, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import Footer from "@/components/footer";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,8 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${poppins.variable} ${merriweather.variable} font-sans`}>
-        {children}
+      <body className={`${poppins.variable} ${merriweather.variable} font-sans min-h-screen flex flex-col`}>
+        <div className="flex-grow">
+          {children}
+        </div>
+        <Footer />
         <Toaster />
       </body>
     </html>
