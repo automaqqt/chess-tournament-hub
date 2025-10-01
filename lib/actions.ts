@@ -14,19 +14,19 @@ const parseFees = (feeString: string) => {
         return feeString.split(',').map(pair => {
             const [name, price] = pair.split(':');
             if (!name || isNaN(parseInt(price))) {
-                throw new Error('Invalid fee format');
+                throw new Error('Ungültiges Gebührenformat');
             }
             return { name: name.trim(), price: parseInt(price.trim()) };
         });
     } catch {
-        throw new Error('Invalid fee format. Use "Name:Price, Name2:Price2".');
+        throw new Error('Ungültiges Gebührenformat. Verwenden Sie "Name:Preis, Name2:Preis2".');
     }
 };
 
 // Schema for login form
 const loginSchema = z.object({
-    username: z.string().min(1, { message: 'Username is required.' }),
-    password: z.string().min(1, { message: 'Password is required.' }),
+    username: z.string().min(1, { message: 'Benutzername ist erforderlich.' }),
+    password: z.string().min(1, { message: 'Passwort ist erforderlich.' }),
 });
 
 export async function login(prevState: { type: string; message?: string; errors?: Record<string, string[]> } | null, formData: FormData) {
@@ -46,16 +46,16 @@ import whitelist from '@/data/filter-whitelist.json';
 import { redirect } from 'next/navigation';
 // --- Updated Registration Schema ---
 const registrationSchema = z.object({
-    firstName: z.string().min(2, { message: 'First name must be at least 2 characters.' }),
-    lastName: z.string().min(2, { message: 'Last name must be at least 2 characters.' }),
-    email: z.string().email({ message: 'Please enter a valid email address.' }),
-    birthYear: z.coerce.number().min(1920, "Invalid birth year.").max(new Date().getFullYear() - 5, "You must be at least 5 years old."),
+    firstName: z.string().min(2, { message: 'Vorname muss mindestens 2 Zeichen lang sein.' }),
+    lastName: z.string().min(2, { message: 'Nachname muss mindestens 2 Zeichen lang sein.' }),
+    email: z.string().email({ message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' }),
+    birthYear: z.coerce.number().min(1920, "Ungültiges Geburtsjahr.").max(new Date().getFullYear() - 5, "Sie müssen mindestens 5 Jahre alt sein."),
     verein: z.string().optional(),
     elo: z.string().optional(),
     eventId: z.string(),
     feeCategory: z.string().optional(),
     agreeToTerms: z.preprocess((val) => val === 'on', z.boolean()).refine(val => val === true, {
-      message: "You must agree to the Terms & Conditions and Privacy Policy."
+      message: "Sie müssen den Allgemeinen Geschäftsbedingungen und der Datenschutzerklärung zustimmen."
     }),
     isPubliclyVisible: z.preprocess((val) => val === 'on', z.boolean()).optional(),
   });
@@ -77,14 +77,14 @@ const registrationSchema = z.object({
     // Check if fee category is required
     const event = await prisma.event.findUnique({ where: { id: validatedFields.data.eventId } });
     if (!event) {
-      return { type: 'error', message: 'Event not found.' };
+      return { type: 'error', message: 'Veranstaltung nicht gefunden.' };
     }
 
     const eventFees = Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : [];
     if (eventFees.length > 0 && (!validatedFields.data.feeCategory || validatedFields.data.feeCategory.trim() === '')) {
       return {
         type: 'error',
-        errors: { feeCategory: ['You must select a fee category.'] },
+        errors: { feeCategory: ['Sie müssen eine Gebührenkategorie auswählen.'] },
         fields: rawData,
       };
     }
@@ -120,7 +120,7 @@ const registrationSchema = z.object({
         if (!whitelist.players.includes(fullName)) {
           return {
             type: 'error',
-            errors: { firstName: ['Player not found in the official whitelist.'] },
+            errors: { firstName: ['Für diese Veranstaltung musst du ein Schachzwerg sein.'] },
             fields: rawData,
           };
         }
@@ -129,7 +129,7 @@ const registrationSchema = z.object({
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() - 1);
       if (tomorrow > event.registrationEndDate) {
-        return { type: 'error', message: 'The registration deadline for this event has passed.' };
+        return { type: 'error', message: 'Die Anmeldefrist für diese Veranstaltung ist abgelaufen.' };
     }
   
       const existingRegistrations = await prisma.registration.findMany({
@@ -214,11 +214,11 @@ const registrationSchema = z.object({
   }
 
   const eventSchema = z.object({
-    title: z.string().min(5, 'Title must be at least 5 characters.'),
-    description: z.string().min(10, 'Description must be at least 10 characters.'),
-    fullDetails: z.string().min(20, 'Full details must be at least 20 characters.'),
-    date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format" }),
-    location: z.string().min(5, 'Location is required.'),
+    title: z.string().min(5, 'Titel muss mindestens 5 Zeichen lang sein.'),
+    description: z.string().min(10, 'Beschreibung muss mindestens 10 Zeichen lang sein.'),
+    fullDetails: z.string().min(20, 'Vollständige Details müssen mindestens 20 Zeichen lang sein.'),
+    date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Ungültiges Datumsformat" }),
+    location: z.string().min(5, 'Ort ist erforderlich.'),
     // Zod transform to handle fee string parsing and validation
     fees: z.string().transform((val, ctx) => {
         // Allow empty string for free events
@@ -228,17 +228,17 @@ const registrationSchema = z.object({
         try {
             return parseFees(val);
         } catch (e: unknown) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: e instanceof Error ? e.message : 'Invalid fee format' });
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: e instanceof Error ? e.message : 'Ungültiges Gebührenformat' });
             return z.NEVER;
         }
     }),
-    registrationEndDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Invalid date format" }),
+    registrationEndDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Ungültiges Datumsformat" }),
     type: z.enum(['classic', 'blitz', 'scholastic', 'rapid']),
     isPremier: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     isEloRequired: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     customFields: z.string().optional(),
     emailText: z.string().optional(),
-    organiserEmail: z.string().email({ message: 'Please enter a valid email address.' }).optional().or(z.literal('')),
+    organiserEmail: z.string().email({ message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' }).optional().or(z.literal('')),
     pdfFile: z.any().refine(
         (file) => {
             // If no file is uploaded, or it's an empty file, it's valid (optional).
@@ -252,7 +252,7 @@ const registrationSchema = z.object({
                 typeof file.type === 'string'
             );
         },
-        { message: "Invalid file upload." }
+        { message: "Ungültiger Datei-Upload." }
     ).optional(),
 });
 
@@ -325,7 +325,7 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         } catch (error) {
             console.error("File upload failed:", error);
             // This will now provide a more detailed error in your server logs
-            return { type: 'error', message: 'Failed to upload PDF.', fields: rawData };
+            return { type: 'error', message: 'PDF-Upload fehlgeschlagen.', fields: rawData };
         }
     }
 
@@ -346,7 +346,7 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         }
     } catch (error) {
         console.error('DB Error:', error);
-        return { type: 'error', message: 'Database error.', fields: rawData };
+        return { type: 'error', message: 'Datenbankfehler.', fields: rawData };
     }
 
     revalidatePath('/');
@@ -376,7 +376,7 @@ export async function deleteEvent(eventId: string) {
         });
     } catch (error) {
         console.error('Event deletion error:', error);
-        return { type: 'error', message: 'Database error. Could not delete event.' };
+        return { type: 'error', message: 'Datenbankfehler. Veranstaltung konnte nicht gelöscht werden.' };
     }
 
     revalidatePath('/');
@@ -391,7 +391,7 @@ export async function deleteRegistration(registrationId: string, eventId: string
         });
     } catch (error) {
         console.error('Registration deletion error:', error);
-        return { type: 'error', message: 'Database error. Could not delete registration.' };
+        return { type: 'error', message: 'Datenbankfehler. Anmeldung konnte nicht gelöscht werden.' };
     }
 
     revalidatePath('/');

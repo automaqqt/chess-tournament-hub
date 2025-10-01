@@ -83,7 +83,7 @@ export default function EventForm({ event }: { event?: Event }) {
     return {
       title: '', description: '', fullDetails: '', date: '', location: '',
       entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '', 
-      emailText: 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n\nBei Fragen können Sie uns jederzeit erreichen, indem Sie einfach auf diese E-Mail antworten.',
+      emailText: 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n',
       organiserEmail: ''
     };
   });

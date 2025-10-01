@@ -49,9 +49,13 @@ export default function EventList({ initialEvents }: { initialEvents: EventWithC
           {(['all', 'premier', 'blitz'] as FilterType[]).map(filter => (
             <Button
               key={filter}
-              variant={activeFilter === filter ? 'default' : 'outline'}
+              variant="outline"
               onClick={() => setActiveFilter(filter)}
-              className="capitalize rounded-full px-5 py-2 border-zinc-700 hover:bg-zinc-800"
+              className={`capitalize rounded-full px-5 py-2 border-zinc-700 transition-all duration-300 ${
+                activeFilter === filter
+                  ? 'bg-zinc-500 text-white border-zinc-500 hover:bg-zinc-500/90'
+                  : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+              }`}
             >
               {filter === 'premier' ? 'Schachzwerge Events' : filter === 'all' ? 'Alle' : filter}
             </Button>

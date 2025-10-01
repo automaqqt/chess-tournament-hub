@@ -39,35 +39,46 @@ function replacePlaceholders(text: string, payload: RegistrationEmailPayload): s
 // 3. Function to create the HTML content for the email
 function getRegistrationEmailHtml(payload: RegistrationEmailPayload): string {
   // Get custom text or use default
-  const customText = payload.customEmailText && payload.customEmailText.trim() 
+  const customText = payload.customEmailText && payload.customEmailText.trim()
     ? replacePlaceholders(payload.customEmailText, payload)
-    : 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n\nBei Fragen können Sie uns jederzeit erreichen unter meldung@schachzwerge-magdeburg.de.';
+    : 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n\n';
 
   return `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-      <h2 style="color: #d4af37;">Anmeldung bestätigt!</h2>
-      <p>Sehr geehrte/r ${payload.firstName} ${payload.lastName},</p>
-      <br>
-      <p>vielen Dank für Ihre Anmeldung zum folgenden Schachturnier:</p>
-      <p style="font-size: 1.2em; font-weight: bold; color: #1a1a1a;">${payload.eventName}</p>
-      ${payload.eventDate ? `<p><strong>Datum:</strong> ${payload.eventDate}</p>` : ''}
-      ${payload.eventLocation ? `<p><strong>Ort:</strong> ${payload.eventLocation}</p>` : ''}
-      <br>
-      <div style="white-space: pre-line;">${customText}</div>
-      <br>
-      <br>
-      <p>Bei Fragen senden Sie gerne eine Mail an meldung@schachzwerge-magdeburg.de</p>
-      <br>
-      <p>Mit freundlichen Grüßen,</p>
-      <p><strong>Ihr Team der Schachzwerge Magdeburg e.V.</strong></p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      <div style="background: linear-gradient(135deg, #d4af37 0%, #c9a428 100%); padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">✓ Anmeldung bestätigt!</h1>
+      </div>
 
-      <p style="font-size: 1.1em; font-weight: bold; color: #1a1a1a;">
-        Bankverbindung:<br>
-        IBAN: DE14 8306 5408 0004 9859 82<br>
-        BIC: GENODEF1SLR<br>
-        Kontoinhaber: Schachzwerge Magdeburg e. V.<br>
-        Bank: Deutsche Skatbank
-      </p>
+      <div style="padding: 40px 30px; background-color: #ffffff;">
+        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Sehr geehrte/r ${payload.firstName} ${payload.lastName},</p>
+
+        <p style="font-size: 16px; color: #555; margin-bottom: 25px;">vielen Dank für Ihre Anmeldung zum folgenden Schachturnier:</p>
+
+        <div style="background-color: #f8f9fa; border-left: 4px solid #d4af37; padding: 20px; margin: 25px 0; border-radius: 4px;">
+          <p style="font-size: 20px; font-weight: 600; color: #1a1a1a; margin: 0 0 15px 0;">${payload.eventName}</p>
+          ${payload.eventDate ? `<p style="font-size: 15px; color: #555; margin: 8px 0;"><strong style="color: #333;">📅 Datum:</strong> ${payload.eventDate}</p>` : ''}
+          ${payload.eventLocation ? `<p style="font-size: 15px; color: #555; margin: 8px 0;"><strong style="color: #333;">📍 Ort:</strong> ${payload.eventLocation}</p>` : ''}
+        </div>
+
+        <div style="white-space: pre-line; font-size: 15px; color: #555; line-height: 1.7; margin: 25px 0;">${customText}</div>
+
+        <p style="font-size: 15px; color: #555; margin-top: 30px;">Bei Fragen senden Sie gerne eine Mail an <a href="mailto:meldung@schachzwerge-magdeburg.de" style="color: #d4af37; text-decoration: none;">meldung@schachzwerge-magdeburg.de</a></p>
+
+        <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+          <p style="font-size: 15px; color: #555; margin-bottom: 8px;">Mit freundlichen Grüßen,</p>
+          <p style="font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0;">Ihr Team der Schachzwerge Magdeburg e.V.</p>
+        </div>
+      </div>
+
+      <div style="background-color: #f8f9fa; padding: 20px 30px; border-radius: 0 0 8px 8px; border-top: 1px solid #e9ecef;">
+        <p style="font-size: 11px; color: #6c757d; margin: 0 0 10px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Bankverbindung</p>
+        <div style="font-size: 11px; color: #6c757d; line-height: 1.6;">
+          <span style="display: inline-block; margin-right: 15px;">IBAN: DE14 8306 5408 0004 9859 82</span>
+          <span style="display: inline-block; margin-right: 15px;">BIC: GENODEF1SLR</span><br>
+          <span style="display: inline-block; margin-right: 15px;">Kontoinhaber: Schachzwerge Magdeburg e. V.</span>
+          <span style="display: inline-block;">Bank: Deutsche Skatbank</span>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -77,7 +88,7 @@ export async function sendRegistrationConfirmationEmail(payload: RegistrationEma
   const mailOptions = {
     from: process.env.SMTP_FROM_EMAIL,
     to: payload.email,
-    subject: `Confirmation for your registration to "${payload.eventName}"`,
+    subject: `Anmeldebestätigung für "${payload.eventName}"`,
     html: getRegistrationEmailHtml(payload),
     ...(payload.organiserEmail && { bcc: payload.organiserEmail }),
   };

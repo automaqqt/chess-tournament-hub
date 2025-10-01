@@ -295,7 +295,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                     onCheckedChange={handleCheckboxChange}
                   />
                   <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed">
-                    Ich stimme AGB und Datenschutzerklärung zu
+                    Ich stimme den AGB und der Datenschutzerklärung zu
                   </Label>
                 </div>
                 {state.errors?.agreeToTerms && <p className="text-red-500 text-sm">{state.errors.agreeToTerms[0]}</p>}
