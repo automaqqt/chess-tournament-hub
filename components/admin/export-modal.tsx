@@ -23,7 +23,7 @@ export default function ExportModal({ eventId, eventTitle, children }: ExportMod
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-gray-950">
+      <DialogContent className="sm:max-w-md bg-gray-800 dark:bg-gray-950">
         <DialogHeader>
           <DialogTitle>Export wählen</DialogTitle>
           <DialogDescription>

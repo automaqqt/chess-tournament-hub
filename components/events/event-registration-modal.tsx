@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import type { Event } from '@prisma/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import PlayerAutocomplete from '@/components/events/player-autocomplete';
 
 // Define the proper type based on what registerForEvent actually returns
 type RegistrationState = {
@@ -48,12 +49,23 @@ function SubmitButton() {
   );
 }
 
+type Player = {
+  id: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  birthYear: number;
+  dwz: number | null;
+  fideElo: number | null;
+};
+
 export default function RegistrationModal({ event, children }: { event: Event; children: React.ReactNode }) {
   const [state, formAction] = useActionState(registerForEvent, initialFormState);
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [isConfirmedSubmit, setIsConfirmedSubmit] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const feeOptions = useMemo(() => {
     return Array.isArray(event.fees) ? event.fees : [];
   }, [event.fees]);
@@ -81,6 +93,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
       setIsOpen(false);
       setFormValues(initialFormValues); // Reset form on success
       setIsConfirmedSubmit(false); // Reset confirmation flag
+      setSelectedPlayer(null); // Reset selected player
     } else if (state.type === 'error') {
       if ('message' in state && state.message) {
         toast.error(state.message, { duration: 10000 });
@@ -110,6 +123,17 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     setFormValues(prev => ({ ...prev, feeCategory: value }));
   };
 
+  const handlePlayerSelect = (player: Player) => {
+    setSelectedPlayer(player);
+    setFormValues(prev => ({
+      ...prev,
+      firstName: player.firstName,
+      lastName: player.lastName,
+      birthYear: player.birthYear.toString(),
+      elo: (player.dwz || player.fideElo || '').toString(),
+    }));
+  };
+
   // Check if form has been started (any field filled)
   const isFormTouched = () => {
     return formValues.firstName !== '' || 
@@ -135,6 +159,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     setIsOpen(false);
     setFormValues(initialFormValues);
     setIsConfirmedSubmit(false); // Reset confirmation flag
+    setSelectedPlayer(null); // Reset selected player
   };
 
   // Cancel close confirmation
@@ -187,20 +212,48 @@ export default function RegistrationModal({ event, children }: { event: Event; c
             <input type="hidden" name="agreeToTerms" value={formValues.agreeToTerms ? 'on' : 'off'} />
             <input type="hidden" name="isPubliclyVisible" value={formValues.isPubliclyVisible ? 'on' : 'off'} />
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Vorname</Label>
-                  <Input id="firstName" name="firstName" value={formValues.firstName} onChange={handleChange} />
-                  {state.errors?.firstName && <p className="text-red-500 text-sm">{state.errors.firstName[0]}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Nachname</Label>
-                  <Input id="lastName" name="lastName" value={formValues.lastName} onChange={handleChange} />
-                  {state.errors?.lastName && <p className="text-red-500 text-sm">{state.errors.lastName[0]}</p>}
-                </div>
-              </div>
-              {event.isPremier && (
-                <p className="text-xs text-muted-foreground -mt-2">Ihr vollständiger Name muss in der Spielerliste stehen.</p>
+              {event.isEloRequired ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Spieler auswählen</Label>
+                    <PlayerAutocomplete
+                      onPlayerSelect={handlePlayerSelect}
+                      selectedPlayer={selectedPlayer}
+                    />
+                    <p className="text-xs text-muted-foreground">Suchen Sie Ihren Namen aus der Spielerdatenbank</p>
+                    {state.errors?.firstName && <p className="text-red-500 text-sm">{state.errors.firstName[0]}</p>}
+                  </div>
+                  {selectedPlayer && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">Vorname</Label>
+                        <Input id="firstName" name="firstName" value={formValues.firstName} disabled className="bg-muted" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Nachname</Label>
+                        <Input id="lastName" name="lastName" value={formValues.lastName} disabled className="bg-muted" />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Vorname</Label>
+                      <Input id="firstName" name="firstName" value={formValues.firstName} onChange={handleChange} />
+                      {state.errors?.firstName && <p className="text-red-500 text-sm">{state.errors.firstName[0]}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Nachname</Label>
+                      <Input id="lastName" name="lastName" value={formValues.lastName} onChange={handleChange} />
+                      {state.errors?.lastName && <p className="text-red-500 text-sm">{state.errors.lastName[0]}</p>}
+                    </div>
+                  </div>
+                  {event.isPremier && (
+                    <p className="text-xs text-muted-foreground -mt-2">Ihr vollständiger Name muss in der Spielerliste stehen.</p>
+                  )}
+                </>
               )}
               
               <div className="space-y-2">
@@ -212,13 +265,31 @@ export default function RegistrationModal({ event, children }: { event: Event; c
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                       <Label htmlFor="birthYear">Geburtsjahr</Label>
-                      <Input id="birthYear" name="birthYear" type="number" placeholder="e.g., 1995" value={formValues.birthYear} onChange={handleChange} />
+                      <Input
+                        id="birthYear"
+                        name="birthYear"
+                        type="number"
+                        placeholder="e.g., 1995"
+                        value={formValues.birthYear}
+                        onChange={handleChange}
+                        disabled={event.isEloRequired && selectedPlayer !== null}
+                        className={event.isEloRequired && selectedPlayer !== null ? "bg-muted" : ""}
+                      />
                       {state.errors?.birthYear && <p className="text-red-500 text-sm">{state.errors.birthYear[0]}</p>}
                   </div>
                   {event.isEloRequired && (
                     <div className="space-y-2">
-                        <Label htmlFor="elo">ELO-Zahl</Label>
-                        <Input id="elo" name="elo" type="number" placeholder="e.g., 1800" value={formValues.elo} onChange={handleChange} />
+                        <Label htmlFor="elo">DWZ/ELO</Label>
+                        <Input
+                          id="elo"
+                          name="elo"
+                          type="number"
+                          placeholder="e.g., 1800"
+                          value={formValues.elo}
+                          onChange={handleChange}
+                          disabled={selectedPlayer !== null}
+                          className={selectedPlayer !== null ? "bg-muted" : ""}
+                        />
                         {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
                     </div>
                   )}

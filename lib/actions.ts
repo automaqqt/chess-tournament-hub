@@ -44,6 +44,9 @@ export async function login(prevState: { type: string; message?: string; errors?
 
 import whitelist from '@/data/filter-whitelist.json';
 import { redirect } from 'next/navigation';
+import Papa from 'papaparse';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 // --- Updated Registration Schema ---
 const registrationSchema = z.object({
     firstName: z.string().min(2, { message: 'Vorname muss mindestens 2 Zeichen lang sein.' }),
@@ -107,8 +110,44 @@ const registrationSchema = z.object({
           fields: rawData,
         };
       }
+
+      // Validate player exists in spieler.csv database
+      try {
+        const csvPath = join(process.cwd(), 'data', 'spieler.csv');
+        const csvContent = readFileSync(csvPath, 'utf-8');
+        const { data: playerRows } = Papa.parse(csvContent, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        const playerExists = playerRows.some((row: any) => {
+          if (!row.Spielername) return false;
+          const [csvLastName, csvFirstName] = row.Spielername.split(',').map((s: string) => s.trim());
+          const csvBirthYear = row.Geburtsjahr ? parseInt(row.Geburtsjahr) : 0;
+
+          return (
+            csvFirstName.toLowerCase() === validatedFields.data.firstName.toLowerCase() &&
+            csvLastName.toLowerCase() === validatedFields.data.lastName.toLowerCase() &&
+            csvBirthYear === validatedFields.data.birthYear
+          );
+        });
+
+        if (!playerExists) {
+          return {
+            type: 'error',
+            errors: { firstName: ['Spieler nicht in der Datenbank gefunden. Bitte wählen Sie sich aus der Liste aus.'] },
+            fields: rawData,
+          };
+        }
+      } catch (error) {
+        console.error('Error validating player:', error);
+        return {
+          type: 'error',
+          message: 'Fehler bei der Validierung der Spielerdaten.',
+        };
+      }
     }
-  
+
     // Destructure the new fields
     const { firstName, lastName, email, birthYear, verein, elo, eventId, feeCategory, isPubliclyVisible } = validatedFields.data;
   
