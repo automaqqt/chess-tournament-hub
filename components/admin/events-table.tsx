@@ -136,8 +136,8 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="icon">
-                    <Link href={`/api/export/${event.id}`} title="CSV exportieren">
-                       <span className="sr-only">CSV exportieren</span>
+                    <Link href={`/api/export/${event.id}`} title="Swiss Chess Format exportieren">
+                       <span className="sr-only">Swiss Chess Format exportieren</span>
                        <Download className="h-4 w-4" />
                     </Link>
                   </Button>
