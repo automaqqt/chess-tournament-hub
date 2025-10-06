@@ -115,12 +115,18 @@ const registrationSchema = z.object({
       try {
         const csvPath = join(process.cwd(), 'data', 'spieler.csv');
         const csvContent = readFileSync(csvPath, 'utf-8');
-        const { data: playerRows } = Papa.parse(csvContent, {
+
+        type PlayerRow = {
+          Spielername?: string;
+          Geburtsjahr?: string;
+        };
+
+        const { data: playerRows } = Papa.parse<PlayerRow>(csvContent, {
           header: true,
           skipEmptyLines: true,
         });
 
-        const playerExists = playerRows.some((row: any) => {
+        const playerExists = playerRows.some((row) => {
           if (!row.Spielername) return false;
           const [csvLastName, csvFirstName] = row.Spielername.split(',').map((s: string) => s.trim());
           const csvBirthYear = row.Geburtsjahr ? parseInt(row.Geburtsjahr) : 0;
