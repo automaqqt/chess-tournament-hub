@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Users, Edit, Trash2, Download, ChevronUp, ChevronDown } from "lucide-react";
 import { deleteEvent } from "@/lib/actions";
+import ExportModal from "@/components/admin/export-modal";
 
 // Define the type for the event props this component expects
 type EventWithCount = {
@@ -135,12 +136,12 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
                        <Edit className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="icon">
-                    <Link href={`/api/export/${event.id}`} title="Swiss Chess Format exportieren">
-                       <span className="sr-only">Swiss Chess Format exportieren</span>
+                  <ExportModal eventId={event.id} eventTitle={event.title}>
+                    <Button variant="outline" size="icon" title="Exportieren">
+                       <span className="sr-only">Exportieren</span>
                        <Download className="h-4 w-4" />
-                    </Link>
-                  </Button>
+                    </Button>
+                  </ExportModal>
                   <Button
                     variant="outline"
                     size="icon"
