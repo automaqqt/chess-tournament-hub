@@ -7,6 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // 640px is Tailwind's sm breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 type Player = {
   id: string;
   fullName: string;
@@ -27,6 +44,7 @@ export default function PlayerAutocomplete({ onPlayerSelect, selectedPlayer }: P
   const [searchQuery, setSearchQuery] = useState('');
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const searchPlayers = useCallback(async (query: string) => {
     if (query.trim().length < 2) {
@@ -55,9 +73,14 @@ export default function PlayerAutocomplete({ onPlayerSelect, selectedPlayer }: P
     return () => clearTimeout(timer);
   }, [searchQuery, searchPlayers]);
 
-  const formatPlayerDisplay = (player: Player) => {
+  const formatPlayerDisplay = (player: Player, truncate: boolean = false) => {
     const rating = player.dwz || player.fideElo || 'N/A';
-    return `${player.lastName}, ${player.firstName} (Geb: ${player.birthYear}, DWZ: ${rating})`;
+    const fullDisplay = `${player.lastName}, ${player.firstName} (Geb: ${player.birthYear}, DWZ: ${rating})`;
+
+    if (truncate && fullDisplay.length > 25) {
+      return fullDisplay.substring(0, 25) + '...';
+    }
+    return fullDisplay;
   };
 
   return (
@@ -70,30 +93,31 @@ export default function PlayerAutocomplete({ onPlayerSelect, selectedPlayer }: P
           className="w-full justify-between"
         >
           {selectedPlayer
-            ? formatPlayerDisplay(selectedPlayer)
+            ? formatPlayerDisplay(selectedPlayer, isMobile)
             : "Spieler suchen..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0 bg-white dark:bg-gray-950" align="start">
-        <Command shouldFilter={false} className="bg-white dark:bg-gray-950">
+      <PopoverContent className="w-full p-0 bg-gray-700 dark:bg-gray-950" align="start">
+        <Command shouldFilter={false} className="bg-gray-700 dark:bg-gray-950">
           <CommandInput
             placeholder="Name eingeben..."
             value={searchQuery}
             onValueChange={setSearchQuery}
+            className="text-white placeholder:text-gray-400"
           />
-          <CommandList>
+          <CommandList className="text-white">
             {loading && (
-              <div className="flex items-center justify-center py-6">
+              <div className="flex items-center justify-center py-6 text-white">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="ml-2 text-sm">Suche läuft...</span>
               </div>
             )}
             {!loading && searchQuery.length < 2 && (
-              <CommandEmpty>Mindestens 2 Zeichen eingeben</CommandEmpty>
+              <CommandEmpty className="text-white">Mindestens 2 Zeichen eingeben</CommandEmpty>
             )}
             {!loading && searchQuery.length >= 2 && players.length === 0 && (
-              <CommandEmpty>Keine Spieler gefunden</CommandEmpty>
+              <CommandEmpty className="text-white">Keine Spieler gefunden</CommandEmpty>
             )}
             {!loading && players.length > 0 && (
               <CommandGroup>
@@ -105,6 +129,7 @@ export default function PlayerAutocomplete({ onPlayerSelect, selectedPlayer }: P
                       onPlayerSelect(player);
                       setOpen(false);
                     }}
+                    className="text-white cursor-pointer"
                   >
                     <Check
                       className={cn(

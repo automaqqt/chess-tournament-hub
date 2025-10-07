@@ -15,6 +15,8 @@ import type { Event } from '@prisma/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PlayerAutocomplete from '@/components/events/player-autocomplete';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
 
 // Define the proper type based on what registerForEvent actually returns
 type RegistrationState = {
@@ -356,40 +358,47 @@ export default function RegistrationModal({ event, children }: { event: Event; c
 
               <div className="pt-4 mt-4 border-t border-zinc-700 space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="isPubliclyVisible" 
+                  <Checkbox
+                    id="isPubliclyVisible"
                     name="isPubliclyVisible"
                     checked={formValues.isPubliclyVisible}
                     onCheckedChange={handlePrivacyCheckboxChange}
                   />
-                  <Label htmlFor="isPubliclyVisible" className="text-sm leading-relaxed">
+                  <Label htmlFor="isPubliclyVisible" className="text-sm leading-relaxed flex items-center gap-1">
                     Meine Anmeldung darf in der öffentlichen Teilnehmerliste angezeigt werden
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger type="button">
+                          <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Wenn deaktiviert, bleibt Ihre Anmeldung privat und wird nicht in der öffentlichen Liste der Teilnehmer angezeigt.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </Label>
                 </div>
-                <p className="text-xs text-muted-foreground -mt-2">
-                  Wenn deaktiviert, bleibt Ihre Anmeldung privat und wird nicht in der öffentlichen Liste der Teilnehmer angezeigt.
-                </p>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-start space-x-2">
                   <Checkbox
                     id="agreeToTerms"
                     name="agreeToTerms"
                     checked={formValues.agreeToTerms}
                     onCheckedChange={handleCheckboxChange}
+                    className="mt-1"
                   />
-                  <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed">
+                  <div className="text-sm leading-relaxed">
                     Ich stimme der{" "}
                     <a
                       href="/datenschutz"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                      onClick={(e) => e.stopPropagation()}
+                      className="text-primary hover:underline font-semibold"
                     >
                       Datenschutzerklärung
                     </a>
                     {" "}zu
-                  </Label>
+                  </div>
                 </div>
                 {state.errors?.agreeToTerms && <p className="text-red-500 text-sm">{state.errors.agreeToTerms[0]}</p>}
               </div>

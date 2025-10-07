@@ -34,26 +34,46 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
             <DialogTrigger asChild>{children}</DialogTrigger>
             
             {/* --- 1. THE DIALOG CONTENT IS NOW THE GRID CONTAINER --- */}
-            <DialogContent className="max-w-[95vw] sm:max-w-4xl lg:max-w-5xl bg-zinc-900/95 border-zinc-800 backdrop-blur-xl text-white grid grid-rows-[auto_1fr_auto] max-h-[90vh] p-0 shadow-2xl">
+            <DialogContent className="max-w-[95vw] sm:max-w-4xl lg:max-w-5xl bg-zinc-900/95 border-zinc-800 backdrop-blur-xl text-white grid grid-rows-[1fr_auto] max-h-[90vh] p-0 shadow-2xl">
 
-                {/* --- 2. HEADER: NO CHANGE, BUT NOW A GRID ROW --- */}
-                <DialogHeader className="p-8 pb-4 border-b border-zinc-800/50">
-                    <DialogTitle className="text-4xl font-merriweather text-primary mb-2 break-words overflow-wrap-anywhere">{event.title}</DialogTitle>
-                    <DialogDescription className="text-text-light text-base">
-                        {new Date(event.date).toLocaleDateString('de-DE', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
-                    </DialogDescription>
-                </DialogHeader>
+                {/* --- 2. SCROLLABLE CONTENT AREA WITH HEADER --- */}
+                <div className="overflow-y-auto overflow-x-hidden">
+                    <div className="relative px-4 sm:px-8 pt-6 sm:pt-8 pb-6">
+                        {/* Background decorative elements */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"></div>
 
-                {/* --- 3. SCROLLABLE CONTENT AREA --- */}
-                <div className="overflow-y-auto overflow-x-hidden px-8">
-                    <div className="grid gap-8 py-6">
+                        {/* Event header */}
+                        <div className="mb-8">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-merriweather text-white mb-4 break-words leading-tight">
+                                {event.title}
+                            </h2>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg border border-primary/20 font-medium">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    {new Date(event.date).toLocaleDateString('de-DE', {
+                                        weekday: 'long',
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                </span>
+                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800/70 text-gray-300 rounded-lg border border-zinc-700/50">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {new Date(event.date).toLocaleTimeString('de-DE', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })} Uhr
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="px-4 sm:px-8">
+                        <div className="grid gap-8 pb-6">
                         <div className="modal-section">
                             <h4 className="text-xl font-semibold mb-4 border-l-4 border-primary pl-4 text-white break-words">Details</h4>
                             <div
@@ -103,9 +123,10 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* --- 4. FOOTER: NO CHANGE, BUT NOW A GRID ROW --- */}
-                <DialogFooter className="flex-col sm:flex-row gap-3 p-8 pt-6 border-t border-zinc-800/50 bg-zinc-900/50">
+            {/* --- 4. FOOTER: NO CHANGE, BUT NOW A GRID ROW --- */}
+            <DialogFooter className="flex-col sm:flex-row gap-3 p-4 sm:p-8 pt-4 sm:pt-6 border-t border-zinc-800/50 bg-zinc-900/50">
                     {event.pdfUrl && (
                         <Button asChild variant="outline" className="w-full sm:w-auto">
                             <a href={event.pdfUrl} target="_blank" rel="noopener noreferrer">
