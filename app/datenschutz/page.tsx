@@ -120,7 +120,7 @@ export default function DatenschutzPage() {
                 Datensicherheit
               </h2>
               <p className="leading-relaxed">
-                Wir treffen umfangreiche technische und organisatorische Maßnahmen, um Ihre personenbezogenen Daten vor Verlust, Missbrauch und unbefugtem Zugriff zu schützen. Die Übertragung Ihrer Eingaben im Anmeldetool erfolgt verschlüsselt über <strong className="text-white">SSL/TLS</strong> (erkennbar an „https://" in der URL). Dadurch werden Ihre Daten sicher über das Internet an unseren Server übertragen. Unsere Hosting-Infrastruktur entspricht modernen Sicherheitsstandards (inklusive ISO-Zertifizierung des Rechenzentrums) und wird regelmäßig gewartet und aktualisiert.
+                Wir treffen umfangreiche technische und organisatorische Maßnahmen, um Ihre personenbezogenen Daten vor Verlust, Missbrauch und unbefugtem Zugriff zu schützen. Die Übertragung Ihrer Eingaben im Anmeldetool erfolgt verschlüsselt über <strong className="text-white">SSL/TLS</strong> (erkennbar an &ldquo;https://&rdquo; in der URL). Dadurch werden Ihre Daten sicher über das Internet an unseren Server übertragen. Unsere Hosting-Infrastruktur entspricht modernen Sicherheitsstandards (inklusive ISO-Zertifizierung des Rechenzentrums) und wird regelmäßig gewartet und aktualisiert.
               </p>
             </section>
 
