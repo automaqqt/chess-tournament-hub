@@ -181,10 +181,13 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     setShowConfirmSubmit(false);
     setIsConfirmedSubmit(true);
     // Trigger the form submission programmatically
-    const form = document.getElementById('registration-form') as HTMLFormElement;
-    if (form) {
-      form.requestSubmit();
-    }
+    // Use setTimeout to ensure state update completes before submission
+    setTimeout(() => {
+      const form = document.getElementById('registration-form') as HTMLFormElement;
+      if (form) {
+        form.requestSubmit();
+      }
+    }, 0);
   };
 
   // Cancel confirmation
