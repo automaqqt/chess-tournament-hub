@@ -211,6 +211,15 @@ export default function RegistrationModal({ event, children }: { event: Event; c
             <input type="hidden" name="eventId" value={event.id} />
             <input type="hidden" name="agreeToTerms" value={formValues.agreeToTerms ? 'on' : 'off'} />
             <input type="hidden" name="isPubliclyVisible" value={formValues.isPubliclyVisible ? 'on' : 'off'} />
+            {/* Hidden inputs for disabled fields when player is selected */}
+            {event.isEloRequired && selectedPlayer && (
+              <>
+                <input type="hidden" name="firstName" value={formValues.firstName} />
+                <input type="hidden" name="lastName" value={formValues.lastName} />
+                <input type="hidden" name="birthYear" value={formValues.birthYear} />
+                <input type="hidden" name="elo" value={formValues.elo} />
+              </>
+            )}
             <div className="grid gap-4 py-4">
               {event.isEloRequired ? (
                 <>
@@ -359,14 +368,24 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                 </p>
 
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="agreeToTerms" 
+                  <Checkbox
+                    id="agreeToTerms"
                     name="agreeToTerms"
                     checked={formValues.agreeToTerms}
                     onCheckedChange={handleCheckboxChange}
                   />
                   <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed">
-                    Ich stimme den AGB und der Datenschutzerklärung zu
+                    Ich stimme der{" "}
+                    <a
+                      href="/datenschutz"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Datenschutzerklärung
+                    </a>
+                    {" "}zu
                   </Label>
                 </div>
                 {state.errors?.agreeToTerms && <p className="text-red-500 text-sm">{state.errors.agreeToTerms[0]}</p>}

@@ -296,7 +296,7 @@ export default function EventForm({ event }: { event?: Event }) {
         </div>
         <div className="flex items-center space-x-2">
           <Checkbox id="isEloRequired" name="isEloRequired" checked={!!formData.isEloRequired} onCheckedChange={(checked) => setFormData(prev => ({...prev, isEloRequired: !!checked}))} />
-          <Label htmlFor="isEloRequired" className="text-sm font-medium leading-none">ELO-Zahl als Pflichtfeld</Label>
+          <Label htmlFor="isEloRequired" className="text-sm font-medium leading-none">Nur DSB Mitglieder zulassen</Label>
         </div>
       </div>
 

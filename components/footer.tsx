@@ -26,6 +26,15 @@ export default function Footer() {
             >
               Website
             </a>
+            <span className="text-zinc-700">•</span>
+            <a
+              href="https://schachzwerge.org/Start/Impressum"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors duration-200"
+            >
+              Impressum
+            </a>
           </div>
         </div>
       </div>
