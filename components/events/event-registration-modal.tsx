@@ -36,6 +36,7 @@ const initialFormValues = {
     email: '',
     birthYear: '',
     elo: '',
+    fideElo: '',
     verein: '',
     feeCategory: '',
     agreeToTerms: false,
@@ -79,6 +80,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     email: string;
     birthYear: string;
     elo: string;
+    fideElo: string;
     verein: string;
     feeCategory: string;
     agreeToTerms: boolean;
@@ -132,17 +134,19 @@ export default function RegistrationModal({ event, children }: { event: Event; c
       firstName: player.firstName,
       lastName: player.lastName,
       birthYear: player.birthYear.toString(),
-      elo: (player.dwz || player.fideElo || '').toString(),
+      elo: (player.dwz || '').toString(),
+      fideElo: (player.fideElo || '').toString(),
     }));
   };
 
   // Check if form has been started (any field filled)
   const isFormTouched = () => {
-    return formValues.firstName !== '' || 
-           formValues.lastName !== '' || 
-           formValues.email !== '' || 
-           formValues.birthYear !== '' || 
-           formValues.elo !== '' || 
+    return formValues.firstName !== '' ||
+           formValues.lastName !== '' ||
+           formValues.email !== '' ||
+           formValues.birthYear !== '' ||
+           formValues.elo !== '' ||
+           formValues.fideElo !== '' ||
            formValues.verein !== '';
   };
 
@@ -221,9 +225,13 @@ export default function RegistrationModal({ event, children }: { event: Event; c
               <>
                 <input type="hidden" name="firstName" value={formValues.firstName} />
                 <input type="hidden" name="lastName" value={formValues.lastName} />
-                <input type="hidden" name="birthYear" value={formValues.birthYear} />
                 <input type="hidden" name="elo" value={formValues.elo} />
+                <input type="hidden" name="fideElo" value={formValues.fideElo} />
               </>
+            )}
+            {/* Always include birthYear as hidden for ELO-required events */}
+            {event.isEloRequired && (
+              <input type="hidden" name="birthYear" value={formValues.birthYear} />
             )}
             <div className="grid gap-4 py-4">
               {event.isEloRequired ? (
@@ -276,38 +284,51 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                 {state.errors?.email && <p className="text-red-500 text-sm">{state.errors.email[0]}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {event.isEloRequired ? (
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                      <Label htmlFor="birthYear">Geburtsjahr</Label>
-                      <Input
-                        id="birthYear"
-                        name="birthYear"
-                        type="number"
-                        placeholder="e.g., 1995"
-                        value={formValues.birthYear}
-                        onChange={handleChange}
-                        disabled={event.isEloRequired && selectedPlayer !== null}
-                        className={event.isEloRequired && selectedPlayer !== null ? "bg-muted" : ""}
-                      />
-                      {state.errors?.birthYear && <p className="text-red-500 text-sm">{state.errors.birthYear[0]}</p>}
+                    <Label htmlFor="elo">DWZ</Label>
+                    <Input
+                      id="elo"
+                      name="elo"
+                      type="number"
+                      placeholder="e.g., 1800"
+                      value={formValues.elo}
+                      onChange={handleChange}
+                      disabled={selectedPlayer !== null}
+                      className={selectedPlayer !== null ? "bg-muted" : ""}
+                    />
+                    {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
                   </div>
-                  {event.isEloRequired && (
-                    <div className="space-y-2">
-                        <Label htmlFor="elo">DWZ/ELO</Label>
-                        <Input
-                          id="elo"
-                          name="elo"
-                          type="number"
-                          placeholder="e.g., 1800"
-                          value={formValues.elo}
-                          onChange={handleChange}
-                          disabled={selectedPlayer !== null}
-                          className={selectedPlayer !== null ? "bg-muted" : ""}
-                        />
-                        {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
-                    </div>
-                  )}
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fideElo">FIDE-Elo</Label>
+                    <Input
+                      id="fideElo"
+                      name="fideElo"
+                      type="number"
+                      placeholder="e.g., 1850"
+                      value={formValues.fideElo}
+                      onChange={handleChange}
+                      disabled={selectedPlayer !== null}
+                      className={selectedPlayer !== null ? "bg-muted" : ""}
+                    />
+                    {state.errors?.fideElo && <p className="text-red-500 text-sm">{state.errors.fideElo[0]}</p>}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="birthYear">Geburtsjahr</Label>
+                  <Input
+                    id="birthYear"
+                    name="birthYear"
+                    type="number"
+                    placeholder="e.g., 1995"
+                    value={formValues.birthYear}
+                    onChange={handleChange}
+                  />
+                  {state.errors?.birthYear && <p className="text-red-500 text-sm">{state.errors.birthYear[0]}</p>}
+                </div>
+              )}
 
               {!event.isEloRequired && (
                 <div className="space-y-2">
@@ -457,12 +478,18 @@ export default function RegistrationModal({ event, children }: { event: Event; c
             <div>{formValues.lastName}</div>
             <div><strong>E-Mail:</strong></div>
             <div>{formValues.email}</div>
-            <div><strong>Geburtsjahr:</strong></div>
-            <div>{formValues.birthYear}</div>
+            {!event.isEloRequired && (
+              <>
+                <div><strong>Geburtsjahr:</strong></div>
+                <div>{formValues.birthYear}</div>
+              </>
+            )}
             {event.isEloRequired && (
               <>
-                <div><strong>ELO-Zahl:</strong></div>
+                <div><strong>DWZ:</strong></div>
                 <div>{formValues.elo || 'Nicht angegeben'}</div>
+                <div><strong>FIDE-Elo:</strong></div>
+                <div>{formValues.fideElo || 'Nicht angegeben'}</div>
               </>
             )}
             <div><strong>Verein:</strong></div>
@@ -473,7 +500,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                 <div>{formValues.feeCategory || 'Keine Auswahl'}</div>
               </>
             )}
-            
+
           </div>
           
           {customFields.length > 0 && (

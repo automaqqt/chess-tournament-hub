@@ -37,11 +37,12 @@ model Registration {
   email     String
   birthYear Int
   verein    String   @default("")
-  elo       Int
+  elo       Int      @default(0) // DWZ rating
+  fideElo   Int      @default(0) // FIDE-Elo rating
   feeCategory String   @default("Standard") // To store which fee the user selected
-  additionalInfo Json  
+  additionalInfo Json
   isPubliclyVisible Boolean @default(true) // Whether the registration should be visible in public lists
-  
+
   event     Event    @relation(fields: [eventId], references: [id])
   eventId   String
   createdAt DateTime @default(now())

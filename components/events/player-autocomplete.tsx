@@ -74,8 +74,10 @@ export default function PlayerAutocomplete({ onPlayerSelect, selectedPlayer }: P
   }, [searchQuery, searchPlayers]);
 
   const formatPlayerDisplay = (player: Player, truncate: boolean = false) => {
-    const rating = player.dwz || player.fideElo || 'N/A';
-    const fullDisplay = `${player.lastName}, ${player.firstName} (Geb: ${player.birthYear}, DWZ: ${rating})`;
+    const dwzDisplay = player.dwz ? `DWZ: ${player.dwz}` : null;
+    const fideDisplay = player.fideElo ? `FIDE: ${player.fideElo}` : null;
+    const ratings = [dwzDisplay, fideDisplay].filter(Boolean).join(', ') || 'N/A';
+    const fullDisplay = `${player.lastName}, ${player.firstName} (${ratings})`;
 
     if (truncate && fullDisplay.length > 25) {
       return fullDisplay.substring(0, 25) + '...';

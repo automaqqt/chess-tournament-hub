@@ -53,6 +53,7 @@ const registrationSchema = z.object({
     birthYear: z.coerce.number().min(1920, "Ungültiges Geburtsjahr.").max(new Date().getFullYear() - 5, "Sie müssen mindestens 5 Jahre alt sein."),
     verein: z.string().optional(),
     elo: z.string().optional(),
+    fideElo: z.string().optional(),
     eventId: z.string(),
     feeCategory: z.string().optional(),
     agreeToTerms: z.preprocess((val) => val === 'on', z.boolean()).refine(val => val === true, {
@@ -134,7 +135,7 @@ const registrationSchema = z.object({
     }
 
     // Destructure the new fields
-    const { firstName, lastName, email, birthYear, verein, elo, eventId, feeCategory, isPubliclyVisible } = validatedFields.data;
+    const { firstName, lastName, email, birthYear, verein, elo, fideElo, eventId, feeCategory, isPubliclyVisible } = validatedFields.data;
   
     try {
       
@@ -204,6 +205,7 @@ const registrationSchema = z.object({
           birthYear,
           verein: verein || 'N/A',
           elo: elo ? parseInt(elo) : 0,
+          fideElo: fideElo ? parseInt(fideElo) : 0,
           feeCategory: feeCategory || 'Standard',
           eventId,
           additionalInfo,
