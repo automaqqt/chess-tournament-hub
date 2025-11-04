@@ -1,5 +1,5 @@
 'use server';
-import { SignJWT } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -40,4 +40,20 @@ export async function signIn(username: string, password: string) {
 export async function logout() {
   (await cookies()).set('auth_token', '', { expires: new Date(0) });
   redirect('/login');
+}
+
+export async function verifyAuth(): Promise<boolean> {
+  try {
+    const token = (await cookies()).get('auth_token')?.value;
+
+    if (!token) {
+      return false;
+    }
+
+    await jwtVerify(token, key);
+    return true;
+  } catch (error) {
+    console.error('Auth verification failed:', error);
+    return false;
+  }
 }
