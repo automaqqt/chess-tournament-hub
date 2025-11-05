@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import prisma from './db';
 import { revalidatePath } from 'next/cache';
-import { signIn } from './auth';
+import { signIn, verifyAuth } from './auth';
 import { sendRegistrationConfirmationEmail } from './email'; 
 import fs from 'fs/promises';
 import path from 'path';
@@ -382,15 +382,28 @@ async function handleEventForm(formData: FormData, eventId?: string) {
 }
 
 export async function createEvent(prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
+    const isAuthenticated = await verifyAuth();
+    if (!isAuthenticated) {
+        return { type: 'error', message: 'Nicht autorisiert. Bitte melden Sie sich an.' };
+    }
     return handleEventForm(formData);
 }
 
 export async function updateEvent(eventId: string, prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
+    const isAuthenticated = await verifyAuth();
+    if (!isAuthenticated) {
+        return { type: 'error', message: 'Nicht autorisiert. Bitte melden Sie sich an.' };
+    }
     return handleEventForm(formData, eventId);
 }
 
 // --- NEW: Delete Event Action ---
 export async function deleteEvent(eventId: string) {
+    const isAuthenticated = await verifyAuth();
+    if (!isAuthenticated) {
+        return { type: 'error', message: 'Nicht autorisiert. Bitte melden Sie sich an.' };
+    }
+
     try {
         // Must delete dependent registrations first due to foreign key constraints
         await prisma.registration.deleteMany({
@@ -411,6 +424,11 @@ export async function deleteEvent(eventId: string) {
 
 // --- NEW: Delete Registration Action ---
 export async function deleteRegistration(registrationId: string, eventId: string) {
+    const isAuthenticated = await verifyAuth();
+    if (!isAuthenticated) {
+        return { type: 'error', message: 'Nicht autorisiert. Bitte melden Sie sich an.' };
+    }
+
     try {
         await prisma.registration.delete({
             where: { id: registrationId },
