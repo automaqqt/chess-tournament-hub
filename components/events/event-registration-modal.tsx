@@ -70,7 +70,9 @@ export default function RegistrationModal({ event, children }: { event: Event; c
   const [isConfirmedSubmit, setIsConfirmedSubmit] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const feeOptions = useMemo(() => {
-    return Array.isArray(event.fees) ? event.fees : [];
+    const fees = Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : [];
+    // Filter out any fees with empty names to prevent Select.Item value errors
+    return fees.filter((fee) => fee.name && fee.name.trim() !== '');
   }, [event.fees]);
 
   // --- NEW: Local state to control the form inputs ---

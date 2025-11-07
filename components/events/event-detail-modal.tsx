@@ -44,11 +44,11 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
 
                         {/* Event header */}
                         <div className="mb-8">
-                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-merriweather text-white mb-4 break-words leading-tight">
+                            <DialogTitle className="text-3xl sm:text-4xl lg:text-5xl font-merriweather text-white mb-4 break-words leading-tight">
                                 {event.title}
-                            </h2>
+                            </DialogTitle>
                             <div className="flex flex-wrap items-center gap-3">
-                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg border border-primary/20 font-medium">
+                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-lg border border-primary/20 font-medium" suppressHydrationWarning>
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
@@ -59,7 +59,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                                         year: 'numeric'
                                     })}
                                 </span>
-                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800/70 text-gray-300 rounded-lg border border-zinc-700/50">
+                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800/70 text-gray-300 rounded-lg border border-zinc-700/50" suppressHydrationWarning>
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -85,7 +85,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                         <div className="modal-section bg-zinc-800/30 rounded-lg p-6 border border-zinc-700/50">
                             <h4 className="text-xl font-semibold mb-4 border-l-4 border-primary pl-4 text-white break-words">Anmeldung</h4>
                             <div className="pl-5 space-y-3">
-                                <p className="text-text-light text-base break-words">
+                                <p className="text-text-light text-base break-words" suppressHydrationWarning>
                                     <span className="font-semibold text-white">Anmeldeschluss:</span> {registrationEndDate}
                                 </p>
                                 <p className={`text-sm font-medium px-3 py-2 rounded-md inline-block ${isRegistrationOpen ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>

@@ -49,7 +49,7 @@ export default function EventCard({ event }: { event: EventWithCount }) {
               <div className="flex items-center justify-center w-6 h-7 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
                 <Calendar className="h-3.5 w-3.5 text-primary" />
               </div>
-              <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 font-medium">
+              <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 font-medium" suppressHydrationWarning>
                 {new Date(event.date).toLocaleDateString('de-DE', {
                   weekday: 'short',
                   year: 'numeric',
@@ -85,7 +85,7 @@ export default function EventCard({ event }: { event: EventWithCount }) {
               <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors duration-300">
                 <Clock className="h-3.5 w-3.5 text-orange-400" />
               </div>
-              <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300">
+              <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300" suppressHydrationWarning>
                 Anmeldung bis: {new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
                   day: 'numeric',
                   month: 'short',
