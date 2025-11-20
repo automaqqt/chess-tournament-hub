@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import * as iconv from 'iconv-lite';
 
 type PlayerRow = {
   ID: string;
@@ -30,6 +31,50 @@ export type Player = {
   fideElo: number | null;
 };
 
+/**
+ * Helper function to read CSV files with automatic encoding detection.
+ * Handles UTF-8, Latin-1, Windows-1252, and other common encodings.
+ */
+export function readCSVWithEncoding(filePath: string): string {
+  // Read file as buffer
+  const buffer = readFileSync(filePath);
+
+  // Try to detect encoding by checking for common patterns
+  // Check for UTF-8 BOM
+  if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+    return buffer.toString('utf-8');
+  }
+
+  // Try UTF-8 first - if it decodes without errors, use it
+  try {
+    const utf8String = iconv.decode(buffer, 'utf-8');
+    // Check if decode was successful (no replacement characters)
+    if (!utf8String.includes('\uFFFD')) {
+      return utf8String;
+    }
+  } catch {
+    // UTF-8 decode failed, continue to try other encodings
+  }
+
+  // Try common German/European encodings
+  const encodingsToTry = ['windows-1252', 'iso-8859-1', 'latin1'];
+
+  for (const encoding of encodingsToTry) {
+    try {
+      const decoded = iconv.decode(buffer, encoding);
+      // If successful and contains valid characters, use this encoding
+      if (decoded && !decoded.includes('\uFFFD')) {
+        return decoded;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  // Fallback to latin1 (never fails, always produces output)
+  return iconv.decode(buffer, 'latin1');
+}
+
 // In-memory cache for parsed player data
 let cachedPlayers: Map<string, Player> | null = null;
 let lastFileModTime: number | null = null;
@@ -50,8 +95,8 @@ export function loadPlayersFromCSV(): Map<string, Player> {
     return cachedPlayers;
   }
 
-  // Read and parse CSV
-  const csvContent = readFileSync(csvPath, 'utf-8');
+  // Read and parse CSV with auto-detected encoding
+  const csvContent = readCSVWithEncoding(csvPath);
   const { data } = Papa.parse<PlayerRow>(csvContent, {
     header: true,
     skipEmptyLines: true,

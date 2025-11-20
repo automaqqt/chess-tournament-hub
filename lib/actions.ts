@@ -224,8 +224,10 @@ const registrationSchema = z.object({
           month: 'long',
           day: 'numeric',
           hour: '2-digit',
-          minute: '2-digit'
+          minute: '2-digit',
+          timeZone: 'Europe/Berlin'
         }),
+        eventDateRaw: new Date(event.date),
         eventLocation: event.location,
         customEmailText: event.emailText || undefined,
         organiserEmail: event.organiserEmail || undefined,

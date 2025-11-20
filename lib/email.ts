@@ -9,6 +9,7 @@ type RegistrationEmailPayload = {
   email: string;
   eventName: string;
   eventDate?: string;
+  eventDateRaw?: Date; // Raw date object for ICS generation
   eventLocation?: string;
   customEmailText?: string;
   organiserEmail?: string;
@@ -34,6 +35,74 @@ function replacePlaceholders(text: string, payload: RegistrationEmailPayload): s
     .replace(/\{eventTitle\}/g, payload.eventName)
     .replace(/\{eventDate\}/g, payload.eventDate || '')
     .replace(/\{eventLocation\}/g, payload.eventLocation || '');
+}
+
+// 2b. Function to generate ICS calendar file content
+function generateICSFile(payload: RegistrationEmailPayload): string | null {
+  if (!payload.eventDateRaw) return null;
+
+  // Helper function to format date in ICS format (YYYYMMDDTHHMMSS)
+  const formatICSDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+  };
+
+  // Convert to Europe/Berlin timezone
+  const startDate = new Date(payload.eventDateRaw.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+
+  // Add 4 hours for end time
+  const endDate = new Date(startDate);
+  endDate.setHours(endDate.getHours() + 4);
+
+  // Format dates for ICS
+  const dtStart = formatICSDate(startDate);
+  const dtEnd = formatICSDate(endDate);
+  const dtStamp = formatICSDate(new Date());
+
+  // Generate unique ID
+  const uid = `${dtStamp}-${Math.random().toString(36).substring(7)}@schachzwerge-magdeburg.de`;
+
+  // Sanitize text for ICS (escape special characters)
+  const sanitizeICS = (text: string): string => {
+    return text
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, '\\n');
+  };
+
+  // Build ICS content
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Schachzwerge Magdeburg//Chess Tournament Hub//DE',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${dtStamp}Z`,
+    `DTSTART;TZID=Europe/Berlin:${dtStart}`,
+    `DTEND;TZID=Europe/Berlin:${dtEnd}`,
+    `SUMMARY:${sanitizeICS(payload.eventName)}`,
+    payload.eventLocation ? `LOCATION:${sanitizeICS(payload.eventLocation)}` : '',
+    `DESCRIPTION:Schachturnier - ${sanitizeICS(payload.eventName)}`,
+    'STATUS:CONFIRMED',
+    payload.organiserEmail ? `ORGANIZER:mailto:${payload.organiserEmail}` : 'ORGANIZER:mailto:meldung@schachzwerge-magdeburg.de',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT24H',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Erinnerung: Schachturnier morgen',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(line => line !== '').join('\r\n');
+
+  return icsContent;
 }
 
 // 3. Function to create the HTML content for the email
@@ -85,12 +154,32 @@ function getRegistrationEmailHtml(payload: RegistrationEmailPayload): string {
 
 // 3. The main function to send the confirmation email
 export async function sendRegistrationConfirmationEmail(payload: RegistrationEmailPayload) {
+  // Generate ICS file content
+  const icsContent = generateICSFile(payload);
+
+  // Sanitize event name for filename (remove special characters)
+  const sanitizeFilename = (name: string): string => {
+    return name
+      .replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '')
+      .replace(/\s+/g, '_')
+      .substring(0, 50);
+  };
+
   const mailOptions = {
     from: process.env.SMTP_FROM_EMAIL,
     to: payload.email,
     subject: `Anmeldebestätigung für "${payload.eventName}"`,
     html: getRegistrationEmailHtml(payload),
     ...(payload.organiserEmail && { bcc: payload.organiserEmail }),
+    ...(icsContent && {
+      attachments: [
+        {
+          filename: `${sanitizeFilename(payload.eventName)}.ics`,
+          content: icsContent,
+          contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
+        },
+      ],
+    }),
   };
 
   try {

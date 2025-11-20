@@ -27,6 +27,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        timeZone: 'Europe/Berlin'
     });
 
     return (
@@ -56,7 +57,8 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                                         weekday: 'long',
                                         day: '2-digit',
                                         month: 'long',
-                                        year: 'numeric'
+                                        year: 'numeric',
+                                        timeZone: 'Europe/Berlin'
                                     })}
                                 </span>
                                 <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800/70 text-gray-300 rounded-lg border border-zinc-700/50" suppressHydrationWarning>
@@ -65,7 +67,8 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                                     </svg>
                                     {new Date(event.date).toLocaleTimeString('de-DE', {
                                         hour: '2-digit',
-                                        minute: '2-digit'
+                                        minute: '2-digit',
+                                        timeZone: 'Europe/Berlin'
                                     })} Uhr
                                 </span>
                             </div>

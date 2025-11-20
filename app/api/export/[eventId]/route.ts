@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import Papa from 'papaparse';
-import fs from 'fs';
 import path from 'path';
+import { readCSVWithEncoding } from '@/lib/player-database';
 
 interface SpielerRow {
   ID: string;
   VKZ: string;
   Spielername: string;
   Geburtsjahr: string;
+  Geschlecht: string;
   DWZ: string;
   'FIDE-Elo': string;
   'FIDE-ID': string;
+  'FIDE-Titel': string;
+  'FIDE-Land': string;
   [key: string]: string;
 }
 
@@ -49,9 +52,9 @@ export async function GET(
     if (format === 'swiss') {
       // Swiss chess format (TXT)
 
-      // Parse spieler.csv
+      // Parse spieler.csv with auto-detected encoding
       const spielerCsvPath = path.join(process.cwd(), 'data', 'spieler.csv');
-      const spielerCsvContent = fs.readFileSync(spielerCsvPath, 'utf-8');
+      const spielerCsvContent = readCSVWithEncoding(spielerCsvPath);
       const spielerData = Papa.parse<SpielerRow>(spielerCsvContent, { header: true, skipEmptyLines: true });
 
       // Create player lookup map: key = "firstName|lastName|birthYear"
@@ -70,9 +73,9 @@ export async function GET(
         }
       });
 
-      // Parse vereine.csv
+      // Parse vereine.csv with auto-detected encoding
       const vereineCsvPath = path.join(process.cwd(), 'data', 'vereine.csv');
-      const vereineCsvContent = fs.readFileSync(vereineCsvPath, 'utf-8');
+      const vereineCsvContent = readCSVWithEncoding(vereineCsvPath);
       const vereineData = Papa.parse<VereinRow>(vereineCsvContent, { header: true, skipEmptyLines: true });
 
       // Create verein lookup map: key = ZPS (matches VKZ in spieler.csv)
@@ -84,43 +87,51 @@ export async function GET(
       });
 
       const lines = event.registrations.map(reg => {
-        // Column 1: Format name as "LastName, FirstName" and pad to 32 characters
-        const name = `${reg.lastName}, ${reg.firstName}`.padEnd(32, ' ');
-
-        // Column 2: Empty (padded to 32 characters)
-        const col2 = ''.padEnd(32, ' ');
-
-        // Column 3: Empty (3 spaces)
-        const col3 = '   ';
-
-        // Column 4: Empty (4 spaces)
-        const col4 = '    ';
-
-        // Column 5: ELO as string
-        const elo = reg.elo.toString();
-
         // Look up player data from spieler.csv
         const playerKey = `${reg.firstName.toLowerCase()}|${reg.lastName.toLowerCase()}|${reg.birthYear}`;
         const playerData = playerMap.get(playerKey);
 
-        // Column 6: Vereinname from vereine.csv (mapped via VKZ)
+        // Column 1: "Name" - Format as "LastName,FirstName"
+        const name = `${reg.lastName},${reg.firstName}`;
+
+        // Column 2: "Verein" - Club name from vereine.csv (mapped via VKZ)
         let vereinname = '';
         if (playerData && playerData.VKZ) {
           vereinname = vereinMap.get(playerData.VKZ) || '';
         }
-        const col6 = vereinname.padEnd(32, ' ');
 
-        // Column 7: Empty (3 spaces)
-        const col7 = '   ';
+        // Column 3: "Land" - FIDE country from spieler.csv
+        const land = playerData?.['FIDE-Land'] || '';
 
-        // Column 8: ID from spieler.csv
-        const col8 = playerData?.ID || '';
+        // Column 4: "ELO" - FIDE-Elo from spieler.csv
+        const elo = playerData?.['FIDE-Elo'] || '';
 
-        // Column 9: FIDE-ID from spieler.csv
-        const col9 = playerData?.['FIDE-ID'] || '';
+        // Column 5: "DWZ" - DWZ rating from spieler.csv
+        const dwz = playerData?.DWZ || '';
 
-        // Format as semicolon-separated quoted values
-        return `"${name}";"${col2}";"${col3}";"${col4}";"${elo}";"${col6}";"${col7}";"${col8}";"${col9}"`;
+        // Column 6: "Titel" - FIDE title from spieler.csv
+        const titel = playerData?.['FIDE-Titel'] || '';
+
+        // Column 7: "Geb-Datum/Jahr" - Birth year from registration
+        const birthYear = reg.birthYear.toString();
+
+        // Column 8: "PKZ" - Player ID from spieler.csv
+        const pkz = playerData?.ID || '';
+
+        // Column 9: "FIDE-ID" - FIDE ID from spieler.csv
+        const fideId = playerData?.['FIDE-ID'] || '';
+
+        // Column 10: Empty column
+        const col10 = '';
+
+        // Column 11: "M/W" - Gender from spieler.csv
+        const gender = playerData?.Geschlecht || '';
+
+        // Column 12: Empty column
+        const col12 = '';
+
+        // Format as semicolon-separated quoted values (12 columns)
+        return `"${name}";"${vereinname}";"${land}";"${elo}";"${dwz}";"${titel}";"${birthYear}";"${pkz}";"${fideId}";"${col10}";"${gender}";"${col12}"`;
       });
 
       const txt = lines.join('\n');
