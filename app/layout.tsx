@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Merriweather, Poppins } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Footer from "@/components/footer";
@@ -34,6 +35,11 @@ export default function RootLayout({
         </div>
         <Footer />
         <Toaster />
+        <Script
+          src="https://analysis.cryptomonkeys.cc/script.js"
+          data-website-id="45764ebd-2e9a-479a-b615-5c2192481605"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
