@@ -10,6 +10,7 @@ type RegistrationEmailPayload = {
   eventName: string;
   eventDate?: string;
   eventDateRaw?: Date; // Raw date object for ICS generation
+  eventEndDateRaw?: Date; // Optional end date for ICS generation
   eventLocation?: string;
   customEmailText?: string;
   organiserEmail?: string;
@@ -55,9 +56,14 @@ function generateICSFile(payload: RegistrationEmailPayload): string | null {
   // Convert to Europe/Berlin timezone
   const startDate = new Date(payload.eventDateRaw.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
 
-  // Add 4 hours for end time
-  const endDate = new Date(startDate);
-  endDate.setHours(endDate.getHours() + 4);
+  // Use eventEndDateRaw if available, otherwise add 4 hours
+  const endDate = payload.eventEndDateRaw
+    ? new Date(payload.eventEndDateRaw.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }))
+    : (() => {
+        const calculatedEnd = new Date(startDate);
+        calculatedEnd.setHours(calculatedEnd.getHours() + 4);
+        return calculatedEnd;
+      })();
 
   // Format dates for ICS
   const dtStart = formatICSDate(startDate);

@@ -15,6 +15,7 @@ model Event {
   description   String
   fullDetails   String
   date          DateTime
+  endDate       DateTime?      // Optional end date/time for events
   location      String
   fees          Json           @default("[]") // Store fees as JSON array e.g., [{"name":"Adult","price":50}]
   pdfUrl        String?        // Optional field for the PDF link

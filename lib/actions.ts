@@ -91,26 +91,8 @@ const registrationSchema = z.object({
       };
     }
 
-    // Check if ELO is required and validate it
+    // Validate player exists in spieler.csv database for isEloRequired events
     if (event.isEloRequired) {
-      const eloValue = validatedFields.data.elo;
-      if (!eloValue || eloValue.trim() === '') {
-        return {
-          type: 'error',
-          errors: { elo: ['ELO-Zahl ist erforderlich.'] },
-          fields: rawData,
-        };
-      }
-      const eloNumber = parseInt(eloValue);
-      if (isNaN(eloNumber) || eloNumber < 100 || eloNumber > 3000) {
-        return {
-          type: 'error',
-          errors: { elo: ['ELO muss zwischen 100 und 3000 liegen.'] },
-          fields: rawData,
-        };
-      }
-
-      // Validate player exists in spieler.csv database
       try {
         const exists = playerExists(
           validatedFields.data.firstName,
@@ -130,6 +112,32 @@ const registrationSchema = z.object({
         return {
           type: 'error',
           message: 'Fehler bei der Validierung der Spielerdaten.',
+        };
+      }
+    }
+
+    // Validate ELO range IF provided (optional for all events)
+    const eloValue = validatedFields.data.elo;
+    if (eloValue && eloValue.trim() !== '') {
+      const eloNumber = parseInt(eloValue);
+      if (isNaN(eloNumber) || eloNumber < 100 || eloNumber > 3000) {
+        return {
+          type: 'error',
+          errors: { elo: ['ELO muss zwischen 100 und 3000 liegen.'] },
+          fields: rawData,
+        };
+      }
+    }
+
+    // Validate FIDE-Elo range IF provided (optional for all events)
+    const fideEloValue = validatedFields.data.fideElo;
+    if (fideEloValue && fideEloValue.trim() !== '') {
+      const fideEloNumber = parseInt(fideEloValue);
+      if (isNaN(fideEloNumber) || fideEloNumber < 100 || fideEloNumber > 3000) {
+        return {
+          type: 'error',
+          errors: { fideElo: ['FIDE-Elo muss zwischen 100 und 3000 liegen.'] },
+          fields: rawData,
         };
       }
     }
@@ -164,7 +172,7 @@ const registrationSchema = z.object({
         },
       });
   
-      if (existingRegistrations.length >= 5) {
+      if (existingRegistrations.length >= 20) {
         return { type: 'error', message: 'Maximale Anzahl von 5 Anmeldungen pro E-Mail-Adresse für diese Veranstaltung erreicht. Weitere Meldungen bitte per Mail an meldung@schachzwerge-magdeburg.de' };
       }
       
@@ -228,6 +236,7 @@ const registrationSchema = z.object({
           timeZone: 'Europe/Berlin'
         }),
         eventDateRaw: new Date(event.date),
+        eventEndDateRaw: event.endDate ? new Date(event.endDate) : undefined,
         eventLocation: event.location,
         customEmailText: event.emailText || undefined,
         organiserEmail: event.organiserEmail || undefined,
@@ -246,6 +255,10 @@ const registrationSchema = z.object({
     description: z.string().min(10, 'Beschreibung muss mindestens 10 Zeichen lang sein.'),
     fullDetails: z.string().min(20, 'Vollständige Details müssen mindestens 20 Zeichen lang sein.'),
     date: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Ungültiges Datumsformat" }),
+    endDate: z.string().optional().refine(
+      (date) => !date || !isNaN(Date.parse(date)),
+      { message: "Ungültiges Datumsformat" }
+    ),
     location: z.string().min(5, 'Ort ist erforderlich.'),
     // Zod transform to handle fee string parsing and validation
     fees: z.string().transform((val, ctx) => {
@@ -323,6 +336,19 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         };
     }
 
+    // Validate end date is after start date if provided
+    if (validatedFields.data.endDate) {
+        const endDate = new Date(validatedFields.data.endDate);
+
+        if (endDate <= eventDate) {
+            return {
+                type: 'error',
+                errors: { endDate: ['Das Enddatum muss nach dem Startdatum liegen.'] },
+                fields: rawData
+            };
+        }
+    }
+
     const { pdfFile, ...eventData } = validatedFields.data;
     let pdfUrl: string | undefined = eventId ? (await prisma.event.findUnique({ where: { id: eventId } }))?.pdfUrl || undefined : undefined;
 
@@ -360,6 +386,7 @@ async function handleEventForm(formData: FormData, eventId?: string) {
     const dataToSave = {
         ...eventData,
         date: new Date(eventData.date),
+        endDate: eventData.endDate ? new Date(eventData.endDate) : null,
         pdfUrl,
         isPremier: eventData.isPremier || false,
         isEloRequired: eventData.isEloRequired !== undefined ? eventData.isEloRequired : false,

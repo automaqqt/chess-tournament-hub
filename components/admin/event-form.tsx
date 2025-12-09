@@ -25,6 +25,7 @@ type FormState = {
     description?: string[];
     fullDetails?: string[];
     date?: string[];
+    endDate?: string[];
     location?: string[];
     fees?: string[];
     type?: string[];
@@ -78,11 +79,12 @@ export default function EventForm({ event }: { event?: Event }) {
       return {
         ...event,
         date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
+        endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
       };
     }
     return {
-      title: '', description: '', fullDetails: '', date: '', location: '',
-      entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '', 
+      title: '', description: '', fullDetails: '', date: '', endDate: '', location: '',
+      entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '',
       emailText: 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n',
       organiserEmail: ''
     };
@@ -137,16 +139,31 @@ export default function EventForm({ event }: { event?: Event }) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-            <Label htmlFor="date">Datum und Uhrzeit</Label>
-            <Input 
-              id="date" 
-              name="date" 
-              type="datetime-local" 
-              value={formData.date || ''} 
-              onChange={handleChange} 
+            <Label htmlFor="date">Start: Datum und Uhrzeit</Label>
+            <Input
+              id="date"
+              name="date"
+              type="datetime-local"
+              value={formData.date || ''}
+              onChange={handleChange}
             />
             {state.errors?.date && <p className="text-red-500 text-sm">{state.errors.date[0]}</p>}
         </div>
+        <div className="space-y-2">
+            <Label htmlFor="endDate">Ende: Datum und Uhrzeit (optional)</Label>
+            <Input
+              id="endDate"
+              name="endDate"
+              type="datetime-local"
+              value={formData.endDate || ''}
+              onChange={handleChange}
+            />
+            <p className="text-sm text-muted-foreground">Optional. Leer lassen für eintägige Veranstaltungen.</p>
+            {state.errors?.endDate && <p className="text-red-500 text-sm">{state.errors.endDate[0]}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
             <Label htmlFor="location">Ort</Label>
             <Input id="location" name="location" value={formData.location} onChange={handleChange} />

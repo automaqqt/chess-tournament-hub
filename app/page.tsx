@@ -2,14 +2,28 @@ import EventList from "@/components/events/event-list";
 import prisma from "@/lib/db";
 
 export default async function HomePage() {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() - 1);
+  const now = new Date();
+
+  // For events without endDate, calculate cutoff time (4 hours ago)
+  const fourHoursAgo = new Date(now.getTime() - (4 * 60 * 60 * 1000));
+
   const events = await prisma.event.findMany({
     where: {
-      // --- ADD THIS FILTER ---
-      registrationEndDate: {
-        gte: tomorrow, // "greater than or equal to" today
-      },
+      OR: [
+        // Events with endDate that haven't ended yet
+        {
+          endDate: {
+            gte: now,
+          },
+        },
+        // Events without endDate where start + 4 hours hasn't passed
+        {
+          endDate: null,
+          date: {
+            gte: fourHoursAgo,
+          },
+        },
+      ],
     },
     include: {
       _count: {

@@ -244,7 +244,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                       onPlayerSelect={handlePlayerSelect}
                       selectedPlayer={selectedPlayer}
                     />
-                    <p className="text-xs text-muted-foreground">Suchen Sie Ihren Namen aus der Spielerdatenbank</p>
+                    <p className="text-xs text-muted-foreground">Suchen Sie Ihren Namen aus der Spielerdatenbank. Dies füllt Ihre Daten automatisch aus.</p>
                     {state.errors?.firstName && <p className="text-red-500 text-sm">{state.errors.firstName[0]}</p>}
                   </div>
                   {selectedPlayer && (
@@ -287,36 +287,41 @@ export default function RegistrationModal({ event, children }: { event: Event; c
               </div>
 
               {event.isEloRequired ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="elo">DWZ</Label>
-                    <Input
-                      id="elo"
-                      name="elo"
-                      type="number"
-                      placeholder="e.g., 1800"
-                      value={formValues.elo}
-                      onChange={handleChange}
-                      disabled={selectedPlayer !== null}
-                      className={selectedPlayer !== null ? "bg-muted" : ""}
-                    />
-                    {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="elo">DWZ (Optional)</Label>
+                      <Input
+                        id="elo"
+                        name="elo"
+                        type="number"
+                        placeholder="e.g., 1800"
+                        value={formValues.elo}
+                        onChange={handleChange}
+                        disabled={selectedPlayer !== null}
+                        className={selectedPlayer !== null ? "bg-muted" : ""}
+                      />
+                      {state.errors?.elo && <p className="text-red-500 text-sm">{state.errors.elo[0]}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fideElo">FIDE-Elo (Optional)</Label>
+                      <Input
+                        id="fideElo"
+                        name="fideElo"
+                        type="number"
+                        placeholder="e.g., 1850"
+                        value={formValues.fideElo}
+                        onChange={handleChange}
+                        disabled={selectedPlayer !== null}
+                        className={selectedPlayer !== null ? "bg-muted" : ""}
+                      />
+                      {state.errors?.fideElo && <p className="text-red-500 text-sm">{state.errors.fideElo[0]}</p>}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fideElo">FIDE-Elo</Label>
-                    <Input
-                      id="fideElo"
-                      name="fideElo"
-                      type="number"
-                      placeholder="e.g., 1850"
-                      value={formValues.fideElo}
-                      onChange={handleChange}
-                      disabled={selectedPlayer !== null}
-                      className={selectedPlayer !== null ? "bg-muted" : ""}
-                    />
-                    {state.errors?.fideElo && <p className="text-red-500 text-sm">{state.errors.fideElo[0]}</p>}
-                  </div>
-                </div>
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    ELO-Werte sind optional. Sie werden automatisch ausgefüllt, wenn Sie sich aus der Datenbank auswählen.
+                  </p>
+                </>
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="birthYear">Geburtsjahr</Label>

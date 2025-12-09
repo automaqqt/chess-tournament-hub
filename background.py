@@ -50,7 +50,6 @@ def extract_player_names(data):
     for record in data:
         # Assuming the CSV has 'Vorname' (first name) and 'Nachname' (last name) columns
         # Adjust these field names based on the actual CSV structure
-        print(record)
         raw = record.get('id|nachname|vorname|titel|verein|mglnr|status|dwz|dwzindex|turniercode|turnierende|fideid|fideelo|fidetitel', '').strip()
         first_name = raw.split("|")[2]
         last_name = raw.split("|")[1]
@@ -95,34 +94,56 @@ def save_to_json(players, filename):
         print(f"Error saving to JSON: {e}")
 
 def main():
-    url = "https://www.schachbund.de/php/dewis/verein.php?zps=G0353&format=csv"
+    # List of ZPS numbers to fetch player data from
+    zps_numbers = [
+        "G0353",  # Schachzwerge
+        "G0314"    # Aufbau Elbe
+    ]
+
+    base_url = "https://www.schachbund.de/php/dewis/verein.php"
     output_file = "data/filter-whitelist.json"
-    
-    print("Fetching CSV data...")
-    data = fetch_and_parse_csv(url)
-    
-    if data:
-        print(f"Successfully fetched {len(data)} records")
-        
-        # Extract player names
-        players = extract_player_names(data)
-        print(f"Extracted {len(players)} player names")
-        
-        # Display first few names
-        print("\nFirst few player names:")
-        for i, name in enumerate(players[:10]):
-            print(f"  {i+1}. {name}")
-        
-        # Save to JSON file
-        save_to_json(players, output_file)
-        
-        # Also save some basic info about the data structure
+
+    all_players = []
+
+    print(f"Fetching player data from {len(zps_numbers)} ZPS number(s)...\n")
+
+    # Fetch players from each ZPS number
+    for zps in zps_numbers:
+        url = f"{base_url}?zps={zps}&format=csv"
+        print(f"Fetching data for ZPS: {zps}")
+
+        data = fetch_and_parse_csv(url)
+
         if data:
-            print(f"\nAvailable columns in CSV:")
-            print(", ".join(data[0].keys()))
-            
+            print(f"  ✓ Successfully fetched {len(data)} records")
+
+            # Extract player names
+            players = extract_player_names(data)
+            print(f"  ✓ Extracted {len(players)} player names")
+
+            # Add to combined list
+            all_players.extend(players)
+        else:
+            print(f"  ✗ Failed to fetch data for ZPS: {zps}")
+
+        print()  # Empty line for readability
+
+    if all_players:
+        # Remove duplicates while preserving order
+        unique_players = list(dict.fromkeys(all_players))
+
+        print(f"Total players fetched: {len(all_players)}")
+        print(f"Unique players after deduplication: {len(unique_players)}")
+
+        # Display first few names
+        print("\nFirst 10 player names:")
+        for i, name in enumerate(unique_players[:10]):
+            print(f"  {i+1}. {name}")
+
+        # Save to JSON file
+        save_to_json(unique_players, output_file)
     else:
-        print("Failed to fetch or parse data")
+        print("Failed to fetch any player data")
 
 if __name__ == "__main__":
     main()

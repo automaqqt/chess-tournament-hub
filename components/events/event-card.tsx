@@ -13,6 +13,7 @@ import { Calendar, MapPin, Users, Clock } from 'lucide-react';
 import Image from 'next/image';
 import EventDetailsModal from './event-detail-modal';
 import RegistrationListModal from './registration-list-modal';
+import { formatEventDateRange } from '@/lib/utils';
 
 const PremierStamp = () => (
   <div className="absolute top-5 right-5 z-20 opacity-95 hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
@@ -50,14 +51,7 @@ export default function EventCard({ event }: { event: EventWithCount }) {
                 <Calendar className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 font-medium" suppressHydrationWarning>
-                {new Date(event.date).toLocaleDateString('de-DE', {
-                  weekday: 'short',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                {formatEventDateRange(event.date, event.endDate)}
               </span>
             </div>
 

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import RegistrationModal from './event-registration-modal';
 import { Download } from 'lucide-react';
 import React from 'react';
+import { formatEventDateRange } from '@/lib/utils';
 
 export default function EventDetailsModal({ event, children }: { event: Event; children: React.ReactNode }) {
     const tomorrow = new Date();
@@ -26,8 +27,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
     const registrationEndDate = new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric',
-        timeZone: 'Europe/Berlin'
+        day: 'numeric'
     });
 
     return (
@@ -53,23 +53,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    {new Date(event.date).toLocaleDateString('de-DE', {
-                                        weekday: 'long',
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric',
-                                        timeZone: 'Europe/Berlin'
-                                    })}
-                                </span>
-                                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-800/70 text-gray-300 rounded-lg border border-zinc-700/50" suppressHydrationWarning>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    {new Date(event.date).toLocaleTimeString('de-DE', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        timeZone: 'Europe/Berlin'
-                                    })} Uhr
+                                    {formatEventDateRange(event.date, event.endDate)}
                                 </span>
                             </div>
                         </div>
