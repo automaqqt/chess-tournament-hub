@@ -2,7 +2,7 @@
 
 'use client'; // This component requires client-side interactivity for the delete button.
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -35,6 +35,33 @@ type SortDirection = 'asc' | 'desc';
 export default function EventsTable({ events }: { events: EventWithCount[] }) {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>(() => {
+    // Initialize with current counts from props
+    return events.reduce((acc, event) => {
+      acc[event.id] = event._count.registrations;
+      return acc;
+    }, {} as Record<string, number>);
+  });
+
+  // Auto-refresh registration counts every 10 seconds
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const response = await fetch('/api/events/counts');
+        if (response.ok) {
+          const counts = await response.json();
+          setRegistrationCounts(counts);
+        }
+      } catch (error) {
+        console.error('Error fetching registration counts:', error);
+      }
+    };
+
+    const interval = setInterval(fetchCounts, 10000); // 10 seconds
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -49,7 +76,7 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
     return [...events].sort((a, b) => {
       let aValue: string | Date | number;
       let bValue: string | Date | number;
-      
+
       if (sortField === 'title') {
         aValue = a.title.toLowerCase();
         bValue = b.title.toLowerCase();
@@ -57,15 +84,15 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
         aValue = new Date(a.date);
         bValue = new Date(b.date);
       } else {
-        aValue = a._count.registrations;
-        bValue = b._count.registrations;
+        aValue = registrationCounts[a.id] ?? 0;
+        bValue = registrationCounts[b.id] ?? 0;
       }
-      
+
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [events, sortField, sortDirection]);
+  }, [events, sortField, sortDirection, registrationCounts]);
 
   const handleDelete = async (eventId: string) => {
     if (confirm('Sind Sie sicher, dass Sie diese Veranstaltung und alle Anmeldungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
@@ -119,7 +146,7 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
                   year: 'numeric',
                 })}
               </TableCell>
-              <TableCell className="text-center">{event._count.registrations}</TableCell>
+              <TableCell className="text-center">{registrationCounts[event.id] ?? 0}</TableCell>
               
               {/* --- REPLACEMENT: SIMPLE BUTTON ROW --- */}
               <TableCell className="text-right">
