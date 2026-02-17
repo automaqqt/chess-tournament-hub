@@ -58,7 +58,23 @@ function SubmitButton({ isEditing }: { isEditing: boolean }) {
   return <Button type="submit" variant={"outline"} disabled={pending} className="w-full sm:w-auto">{pending ? (isEditing ? 'Speichern...' : 'Erstellen...') : (isEditing ? 'Änderungen speichern' : 'Veranstaltung erstellen')}</Button>;
 }
 
-export default function EventForm({ event }: { event?: Event }) {
+// Type for defaultValues when duplicating an event (excludes dates and id)
+type EventDefaultValues = {
+  title?: string | null;
+  description?: string | null;
+  fullDetails?: string | null;
+  location?: string | null;
+  fees?: unknown;
+  type?: string | null;
+  isPremier?: boolean;
+  isEloRequired?: boolean;
+  customFields?: string | null;
+  emailText?: string | null;
+  organiserEmail?: string | null;
+  pdfUrl?: string | null;
+};
+
+export default function EventForm({ event, defaultValues }: { event?: Event; defaultValues?: EventDefaultValues }) {
   const isEditing = !!event;
   
   // Create wrapper to fix type signature
@@ -73,27 +89,53 @@ export default function EventForm({ event }: { event?: Event }) {
   const [state, dispatch] = useActionState(formAction, initialFormState);
 
   // --- NEW: Local state to control form inputs ---
-  // Initialize with event data for editing, or defaults for creating
+  // Initialize with event data for editing, defaultValues for duplicating, or empty for creating
   const [formData, setFormData] = useState(() => {
     if (event) {
+      // Editing existing event - include dates
       return {
         ...event,
         date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
         endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
       };
     }
+    if (defaultValues) {
+      // Duplicating event - use defaultValues but clear dates
+      return {
+        title: defaultValues.title || '',
+        description: defaultValues.description || '',
+        fullDetails: defaultValues.fullDetails || '',
+        date: '', // Clear date - user must set new date
+        endDate: '', // Clear endDate - user must set new date
+        location: defaultValues.location || '',
+        entryFee: 0,
+        type: defaultValues.type || 'keine',
+        isPremier: defaultValues.isPremier || false,
+        isEloRequired: defaultValues.isEloRequired || false,
+        customFields: defaultValues.customFields || '',
+        emailText: defaultValues.emailText || 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n',
+        organiserEmail: defaultValues.organiserEmail || '',
+        pdfUrl: defaultValues.pdfUrl || '',
+      };
+    }
+    // New event - empty form
     return {
       title: '', description: '', fullDetails: '', date: '', endDate: '', location: '',
-      entryFee: 0, type: 'classic', isPremier: false, isEloRequired: false, customFields: '',
+      entryFee: 0, type: 'keine', isPremier: false, isEloRequired: false, customFields: '',
       emailText: 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n',
       organiserEmail: ''
     };
   });
 
   // Separate state for fees management
-  const [fees, setFees] = useState<{ name: string; price: number }[]>(
-    event?.fees ? (Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : []) : []
-  );
+  const [fees, setFees] = useState<{ name: string; price: number }[]>(() => {
+    // Use event fees if editing, defaultValues fees if duplicating, otherwise empty
+    const feesSource = event?.fees ?? defaultValues?.fees;
+    if (feesSource && Array.isArray(feesSource)) {
+      return feesSource as { name: string; price: number }[];
+    }
+    return [];
+  });
 
   useEffect(() => {
     if (state.type === 'error') {
@@ -195,14 +237,14 @@ export default function EventForm({ event }: { event?: Event }) {
                     {state.errors?.registrationEndDate && <p className="text-red-500 text-sm">{state.errors.registrationEndDate[0]}</p>}
                 </div>
         <div className="space-y-2">
-            <Label>Event Type</Label>
+            <Label>Kategorie</Label>
              <Select name="type" value={formData.type} onValueChange={(value) => setFormData(prev => ({...prev, type: value}))}>
-                <SelectTrigger><SelectValue placeholder="Veranstaltungstyp auswählen" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Kategorie auswählen" /></SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="classic">Klassisch</SelectItem>
-                    <SelectItem value="rapid">Schnellschach</SelectItem>
-                    <SelectItem value="blitz">Blitz</SelectItem>
-                    <SelectItem value="scholastic">Jugendturnier</SelectItem>
+                    <SelectItem value="keine">Keine Kategorie</SelectItem>
+                    <SelectItem value="Einsteiger">Einsteiger</SelectItem>
+                    <SelectItem value="Fortgeschritten">Fortgeschritten</SelectItem>
+                    <SelectItem value="Wettkampf Schach">Wettkampf Schach</SelectItem>
                 </SelectContent>
             </Select>
             {state.errors?.type && <p className="text-red-500 text-sm">{state.errors.type[0]}</p>}
@@ -258,12 +300,20 @@ export default function EventForm({ event }: { event?: Event }) {
       </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 <div className="space-y-2">
                     <Label htmlFor="pdfFile">Veranstaltungsflyer (PDF)</Label>
                     <Input id="pdfFile" name="pdfFile" type="file" accept=".pdf" />
-                    {event?.pdfUrl && <p className="text-sm text-muted-foreground mt-2">Aktuelle Datei: <a href={event.pdfUrl} target="_blank" rel="noopener noreferrer" className="underline">{event.pdfUrl.split('/').pop()}</a></p>}
+                    {(event?.pdfUrl || defaultValues?.pdfUrl) && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Aktuelle Datei: <a href={event?.pdfUrl || defaultValues?.pdfUrl || ''} target="_blank" rel="noopener noreferrer" className="underline">{(event?.pdfUrl || defaultValues?.pdfUrl || '').split('/').pop()}</a>
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">Optional. Neue Datei hochladen, um die vorhandene zu ersetzen.</p>
+                    {/* Hidden input to preserve PDF URL from duplicated event if no new file is uploaded */}
+                    {defaultValues?.pdfUrl && !event && (
+                      <input type="hidden" name="existingPdfUrl" value={defaultValues.pdfUrl} />
+                    )}
                 </div>
             </div>
 

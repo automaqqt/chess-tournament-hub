@@ -36,37 +36,35 @@ export default function EventCard({ event }: { event: EventWithCount }) {
       {event.isPremier && <PremierStamp />}
 
       {/* Header with Title */}
-      <CardHeader className="relative z-10 pb-4">
-        <CardTitle className={`text-2xl font-merriweather text-primary group-hover:text-primary/90 transition-colors duration-300 leading-tight ${event.isPremier ? 'pr-20' : ''}`}>
+      <CardHeader className="relative z-10 pb-2 sm:pb-4 pt-4 sm:pt-6 px-4 sm:px-6">
+        <CardTitle className={`text-lg sm:text-2xl font-merriweather text-primary group-hover:text-primary/90 transition-colors duration-300 leading-tight ${event.isPremier ? 'pr-20' : ''}`}>
           {event.title}
         </CardTitle>
       </CardHeader>
 
       {/* Metadata Section */}
-      <div className="relative z-10 px-6 pb-5">
-        <div className="bg-zinc-800/40 rounded-lg p-4 border border-zinc-700/30 backdrop-blur-sm">
-          <div className="grid grid-cols-1 gap-3 text-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-6 h-7 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-                <Calendar className="h-3.5 w-3.5 text-primary" />
+      <div className="relative z-10 px-4 sm:px-6 pb-3 sm:pb-5">
+        <div className="bg-zinc-800/40 rounded-lg p-3 sm:p-4 border border-zinc-700/30 backdrop-blur-sm">
+          <div className="grid grid-cols-1 gap-2 sm:gap-3 text-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
               </div>
               <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 font-medium" suppressHydrationWarning>
                 {formatEventDateRange(event.date, event.endDate)}
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-                <MapPin className="h-3.5 w-3.5 text-primary" />
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
               </div>
               <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300">{event.location}</span>
             </div>
 
-            <div className="w-full h-px bg-gradient-to-r from-transparent via-zinc-600/50 to-transparent my-1"></div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300">
-                <Users className="h-3.5 w-3.5 text-green-400" />
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300">
+                <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-400" />
               </div>
               <RegistrationListModal eventId={event.id} registrationCount={event._count.registrations}>
                 <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 cursor-pointer hover:text-primary hover:underline underline-offset-2 decoration-primary/50 hover:decoration-primary transition-all duration-200">
@@ -75,9 +73,9 @@ export default function EventCard({ event }: { event: EventWithCount }) {
               </RegistrationListModal>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors duration-300">
-                <Clock className="h-3.5 w-3.5 text-orange-400" />
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors duration-300">
+                <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-orange-400" />
               </div>
               <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300" suppressHydrationWarning>
                 Anmeldung bis: {new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
@@ -91,17 +89,17 @@ export default function EventCard({ event }: { event: EventWithCount }) {
       </div>
 
       {/* Content Section */}
-      <CardContent className="flex flex-col flex-grow relative z-10 pt-0">
-        <CardDescription className="flex-grow mb-6 text-gray-300 group-hover:text-gray-200 transition-colors duration-300 leading-relaxed text-base">
+      <CardContent className="flex flex-col flex-grow relative z-10 pt-0 px-4 sm:px-6 pb-4 sm:pb-6">
+        <CardDescription className="flex-grow mb-3 sm:mb-6 text-gray-300 group-hover:text-gray-200 transition-colors duration-300 leading-relaxed text-sm sm:text-base line-clamp-2 sm:line-clamp-none">
           {event.description}
         </CardDescription>
 
         {/* Decorative line */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent mb-5"></div>
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent mb-3 sm:mb-5"></div>
 
         <EventDetailsModal event={event}>
-          <Button variant="outline" className="w-full border-primary/60 text-primary bg-primary/5 hover:bg-primary hover:text-black hover:border-primary hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 font-medium group-hover:border-primary/80 py-5">
-            <span className="flex items-center justify-center gap-2 text-base">
+          <Button variant="outline" className="w-full border-primary/60 text-primary bg-primary/5 hover:bg-primary hover:text-black hover:border-primary hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 font-medium group-hover:border-primary/80 py-3 sm:py-5">
+            <span className="flex items-center justify-center gap-2 text-sm sm:text-base">
               Details ansehen & Anmelden
               <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-black/20 transition-colors duration-300">
                 <div className="w-1 h-1 bg-primary rounded-full group-hover:bg-black transition-colors duration-300"></div>

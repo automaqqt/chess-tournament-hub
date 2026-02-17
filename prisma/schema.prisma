@@ -20,7 +20,7 @@ model Event {
   fees          Json           @default("[]") // Store fees as JSON array e.g., [{"name":"Adult","price":50}]
   pdfUrl        String?        // Optional field for the PDF link
   registrationEndDate DateTime // New field for the deadline
-  type          String
+  type          String         @default("keine")
   isPremier     Boolean        @default(false)
   isEloRequired Boolean        @default(true) // Whether ELO is required for registration
   customFields  String         @default("")

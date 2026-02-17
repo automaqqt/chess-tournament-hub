@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Users, Edit, Trash2, Download, ChevronUp, ChevronDown } from "lucide-react";
+import { Users, Edit, Trash2, Download, ChevronUp, ChevronDown, Copy } from "lucide-react";
 import { deleteEvent } from "@/lib/actions";
 import ExportModal from "@/components/admin/export-modal";
 
@@ -35,6 +35,7 @@ type SortDirection = 'asc' | 'desc';
 export default function EventsTable({ events }: { events: EventWithCount[] }) {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [hidePast, setHidePast] = useState(true);
   const [registrationCounts, setRegistrationCounts] = useState<Record<string, number>>(() => {
     // Initialize with current counts from props
     return events.reduce((acc, event) => {
@@ -73,7 +74,9 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
   };
 
   const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => {
+    const now = new Date();
+    const filtered = hidePast ? events.filter(e => new Date(e.date) >= now) : events;
+    return [...filtered].sort((a, b) => {
       let aValue: string | Date | number;
       let bValue: string | Date | number;
 
@@ -92,7 +95,7 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [events, sortField, sortDirection, registrationCounts]);
+  }, [events, sortField, sortDirection, registrationCounts, hidePast]);
 
   const handleDelete = async (eventId: string) => {
     if (confirm('Sind Sie sicher, dass Sie diese Veranstaltung und alle Anmeldungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
@@ -122,7 +125,17 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
 
   return (
     <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4 text-white">Veranstaltungen</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-white">Veranstaltungen</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setHidePast(prev => !prev)}
+          className="text-sm"
+        >
+          {hidePast ? 'Vergangene anzeigen' : 'Vergangene ausblenden'}
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-zinc-800 border-zinc-700">
@@ -161,6 +174,12 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
                     <Link href={`/admin/dashboard/events/${event.id}/edit`} title="Veranstaltung bearbeiten">
                        <span className="sr-only">Veranstaltung bearbeiten</span>
                        <Edit className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="icon">
+                    <Link href={`/admin/dashboard/new-event?duplicateFrom=${event.id}`} title="Duplizieren">
+                       <span className="sr-only">Duplizieren</span>
+                       <Copy className="h-4 w-4" />
                     </Link>
                   </Button>
                   <ExportModal eventId={event.id} eventTitle={event.title}>

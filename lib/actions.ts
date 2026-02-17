@@ -50,7 +50,7 @@ const registrationSchema = z.object({
     firstName: z.string().min(2, { message: 'Vorname muss mindestens 2 Zeichen lang sein.' }),
     lastName: z.string().min(2, { message: 'Nachname muss mindestens 2 Zeichen lang sein.' }),
     email: z.string().email({ message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' }),
-    birthYear: z.coerce.number().min(1920, "Ungültiges Geburtsjahr.").max(new Date().getFullYear() - 5, "Sie müssen mindestens 5 Jahre alt sein."),
+    birthYear: z.coerce.number().min(1920, "Ungültiges Geburtsjahr.").max(new Date().getFullYear(), "Sie müssen mindestens 5 Jahre alt sein."),
     verein: z.string().optional(),
     elo: z.string().optional(),
     fideElo: z.string().optional(),
@@ -274,7 +274,7 @@ const registrationSchema = z.object({
         }
     }),
     registrationEndDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: "Ungültiges Datumsformat" }),
-    type: z.enum(['classic', 'blitz', 'scholastic', 'rapid']),
+    type: z.enum(['keine', 'Einsteiger', 'Fortgeschritten', 'Wettkampf Schach']),
     isPremier: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     isEloRequired: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     customFields: z.string().optional(),
@@ -350,7 +350,12 @@ async function handleEventForm(formData: FormData, eventId?: string) {
     }
 
     const { pdfFile, ...eventData } = validatedFields.data;
-    let pdfUrl: string | undefined = eventId ? (await prisma.event.findUnique({ where: { id: eventId } }))?.pdfUrl || undefined : undefined;
+    // For editing: get existing PDF URL from database
+    // For duplicating: get existing PDF URL from hidden form field
+    const existingPdfUrl = formData.get('existingPdfUrl') as string | null;
+    let pdfUrl: string | undefined = eventId
+        ? (await prisma.event.findUnique({ where: { id: eventId } }))?.pdfUrl || undefined
+        : existingPdfUrl || undefined;
 
     // Handle PDF upload
     if (pdfFile && pdfFile.size > 0) {

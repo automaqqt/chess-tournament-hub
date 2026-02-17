@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Footer from "@/components/footer";
+import CookieConsent from "@/components/cookie-consent";
 
 const poppins = Poppins({
   subsets: ["latin"],

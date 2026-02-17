@@ -477,55 +477,54 @@ export default function RegistrationModal({ event, children }: { event: Event; c
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><strong>Vorname:</strong></div>
-            <div>{formValues.firstName}</div>
-            <div><strong>Nachname:</strong></div>
-            <div>{formValues.lastName}</div>
-            <div><strong>E-Mail:</strong></div>
-            <div>{formValues.email}</div>
-            {!event.isEloRequired && (
-              <>
-                <div><strong>Geburtsjahr:</strong></div>
-                <div>{formValues.birthYear}</div>
-              </>
-            )}
-            {event.isEloRequired && (
-              <>
-                <div><strong>DWZ:</strong></div>
-                <div>{formValues.elo || 'Nicht angegeben'}</div>
-                <div><strong>FIDE-Elo:</strong></div>
-                <div>{formValues.fideElo || 'Nicht angegeben'}</div>
-              </>
-            )}
-            <div><strong>Verein:</strong></div>
-            <div>{formValues.verein || 'Nicht angegeben'}</div>
-            {feeOptions.length > 0 && (
-              <>
-                <div><strong>Startgeld-Kategorie:</strong></div>
-                <div>{formValues.feeCategory || 'Keine Auswahl'}</div>
-              </>
-            )}
-
-          </div>
-          
-          {customFields.length > 0 && (
-            <div className="border-t border-zinc-700 pt-4">
-              <h4 className="font-semibold text-text-light mb-2">Zusätzliche Informationen:</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {customFields.map(field => (
-                  <React.Fragment key={field}>
-                    <div><strong>{field}:</strong></div>
-                    <div>{String(formValues[field] || 'Nicht angegeben')}</div>
-                  </React.Fragment>
-                ))}
-              </div>
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><strong>Vorname:</strong></div>
+              <div>{formValues.firstName}</div>
+              <div><strong>Nachname:</strong></div>
+              <div>{formValues.lastName}</div>
+              <div><strong>E-Mail:</strong></div>
+              <div>{formValues.email}</div>
+              {!event.isEloRequired && (
+                <>
+                  <div><strong>Geburtsjahr:</strong></div>
+                  <div>{formValues.birthYear}</div>
+                </>
+              )}
+              {event.isEloRequired && (
+                <>
+                  <div><strong>DWZ:</strong></div>
+                  <div>{formValues.elo || 'Nicht angegeben'}</div>
+                  <div><strong>FIDE-Elo:</strong></div>
+                  <div>{formValues.fideElo || 'Nicht angegeben'}</div>
+                </>
+              )}
+              <div><strong>Verein:</strong></div>
+              <div>{formValues.verein || 'Nicht angegeben'}</div>
+              {feeOptions.length > 0 && (
+                <>
+                  <div><strong>Startgeld-Kategorie:</strong></div>
+                  <div>{formValues.feeCategory || 'Keine Auswahl'}</div>
+                </>
+              )}
             </div>
-          )}
-          
-          
-        </div>
+
+            {customFields.length > 0 && (
+              <div className="border-t border-zinc-700 pt-4">
+                <h4 className="font-semibold text-text-light mb-2">Zusätzliche Informationen:</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {customFields.map(field => (
+                    <React.Fragment key={field}>
+                      <div><strong>{field}:</strong></div>
+                      <div>{String(formValues[field] || 'Nicht angegeben')}</div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
 
         <DialogFooter className="gap-2">
           <Button variant="default" onClick={cancelSubmit}>
