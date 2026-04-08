@@ -79,6 +79,7 @@ export default function EventCard({ event }: { event: EventWithCount }) {
               </div>
               <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300" suppressHydrationWarning>
                 Anmeldung bis: {new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
+                  timeZone: 'Europe/Berlin',
                   day: 'numeric',
                   month: 'short',
                 })}

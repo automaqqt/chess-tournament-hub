@@ -154,6 +154,7 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
               </TableCell>
               <TableCell>
                 {new Date(event.date).toLocaleDateString('de-DE', {
+                  timeZone: 'Europe/Berlin',
                   day: '2-digit',
                   month: '2-digit',
                   year: 'numeric',

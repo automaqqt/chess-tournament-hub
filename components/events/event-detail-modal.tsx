@@ -25,6 +25,7 @@ export default function EventDetailsModal({ event, children }: { event: Event; c
     const mapEmbedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(event.location)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
     const fees = Array.isArray(event.fees) ? event.fees : [];
     const registrationEndDate = new Date(event.registrationEndDate).toLocaleDateString('de-DE', {
+        timeZone: 'Europe/Berlin',
         year: 'numeric',
         month: 'long',
         day: 'numeric'

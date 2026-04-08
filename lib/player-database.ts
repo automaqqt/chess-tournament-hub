@@ -139,10 +139,16 @@ export function loadPlayersFromCSV(): Map<string, Player> {
  */
 export function searchPlayers(query: string, maxResults: number = 20): Player[] {
   const allPlayers = loadPlayersFromCSV();
-  const searchTerm = query.toLowerCase();
+  const terms = query.toLowerCase().split(/[\s,]+/).filter(t => t.length > 0);
+
+  if (terms.length === 0) return [];
 
   return Array.from(allPlayers.values())
-    .filter(player => player.fullName.toLowerCase().includes(searchTerm))
+    .filter(player => {
+      const first = player.firstName.toLowerCase();
+      const last = player.lastName.toLowerCase();
+      return terms.every(term => first.includes(term) || last.includes(term));
+    })
     .slice(0, maxResults);
 }
 
