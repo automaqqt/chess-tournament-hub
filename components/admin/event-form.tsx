@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
+import { formatDateForInput } from '@/lib/utils';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import type { Event } from '@prisma/client';
 
@@ -95,8 +96,8 @@ export default function EventForm({ event, defaultValues }: { event?: Event; def
       // Editing existing event - include dates
       return {
         ...event,
-        date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
-        endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
+        date: event.date ? formatDateForInput(event.date) : '',
+        endDate: event.endDate ? formatDateForInput(event.endDate) : '',
       };
     }
     if (defaultValues) {
@@ -233,7 +234,7 @@ export default function EventForm({ event, defaultValues }: { event?: Event; def
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-2">
                     <Label htmlFor="registrationEndDate">Anmeldeschluss</Label>
-                    <Input id="registrationEndDate" name="registrationEndDate" type="date" defaultValue={event?.registrationEndDate ? new Date(event.registrationEndDate).toISOString().split('T')[0] : ''} />
+                    <Input id="registrationEndDate" name="registrationEndDate" type="date" defaultValue={event?.registrationEndDate ? formatDateForInput(event.registrationEndDate).split('T')[0] : ''} />
                     {state.errors?.registrationEndDate && <p className="text-red-500 text-sm">{state.errors.registrationEndDate[0]}</p>}
                 </div>
         <div className="space-y-2">

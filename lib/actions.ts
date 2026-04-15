@@ -4,7 +4,8 @@ import { z } from 'zod';
 import prisma from './db';
 import { revalidatePath } from 'next/cache';
 import { signIn, verifyAuth } from './auth';
-import { sendRegistrationConfirmationEmail } from './email'; 
+import { sendRegistrationConfirmationEmail } from './email';
+import { parseDateAsBerlin } from './utils';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -308,8 +309,8 @@ async function handleEventForm(formData: FormData, eventId?: string) {
 
     // Validate that dates are in the future
     const now = new Date();
-    const eventDate = new Date(validatedFields.data.date);
-    const registrationEndDate = new Date(validatedFields.data.registrationEndDate);
+    const eventDate = parseDateAsBerlin(validatedFields.data.date);
+    const registrationEndDate = parseDateAsBerlin(validatedFields.data.registrationEndDate);
 
     if (eventDate <= now) {
         return {
@@ -390,12 +391,12 @@ async function handleEventForm(formData: FormData, eventId?: string) {
 
     const dataToSave = {
         ...eventData,
-        date: new Date(eventData.date),
-        endDate: eventData.endDate ? new Date(eventData.endDate) : null,
+        date: parseDateAsBerlin(eventData.date),
+        endDate: eventData.endDate ? parseDateAsBerlin(eventData.endDate) : null,
         pdfUrl,
         isPremier: eventData.isPremier || false,
         isEloRequired: eventData.isEloRequired !== undefined ? eventData.isEloRequired : false,
-        registrationEndDate: new Date(eventData.registrationEndDate),
+        registrationEndDate: parseDateAsBerlin(eventData.registrationEndDate),
     };
 
     try {
