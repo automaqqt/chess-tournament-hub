@@ -3,6 +3,7 @@ import csv
 from io import StringIO
 import json
 import os
+import zipfile
 
 def fetch_and_parse_csv(url):
     """
@@ -34,8 +35,6 @@ def fetch_and_parse_csv(url):
     except Exception as e:
         print(f"Error parsing CSV: {e}")
         return None
-
-SPIELER_CSV_HEADER = "ID,VKZ,Mgl-Nr,Status,Spielername,Geschlecht,Spielberechtigung,Geburtsjahr,Letzte-Auswertung,DWZ,Index,FIDE-Elo,FIDE-Titel,FIDE-ID,FIDE-Land"
 
 RAW_KEY = 'id|nachname|vorname|titel|verein|mglnr|status|dwz|dwzindex|turniercode|turnierende|fideid|fideelo|fidetitel'
 
@@ -90,43 +89,42 @@ def extract_player_names(data):
     return players
 
 
-def extract_player_records(data):
+def download_spieler_csv(url, filename):
     """
-    Extracts player records from the API data in spieler.csv format.
-
-    Returns:
-        list of dicts with spieler.csv column keys
+    Downloads the full DSB player database ZIP, extracts the CSV, and saves it.
     """
-    records = []
-    for record in data:
-        parsed = parse_raw_record(record)
-        if not parsed:
-            continue
-        nachname = parsed['nachname']
-        vorname = parsed['vorname']
-        if not nachname and not vorname:
-            continue
+    try:
+        print(f"Downloading player database from {url}...")
+        response = requests.get(url)
+        response.raise_for_status()
 
-        spielername = f"{nachname},{vorname}" if nachname and vorname else nachname or vorname
+        # Extract CSV from ZIP
+        from io import BytesIO
+        with zipfile.ZipFile(BytesIO(response.content)) as zf:
+            if 'spieler.csv' not in zf.namelist():
+                print(f"  ✗ spieler.csv not found in ZIP archive (contents: {zf.namelist()})")
+                return False
 
-        records.append({
-            'ID': parsed['id'],
-            'VKZ': parsed['verein'],
-            'Mgl-Nr': parsed['mglnr'],
-            'Status': parsed['status'],
-            'Spielername': spielername,
-            'Geschlecht': '',
-            'Spielberechtigung': '',
-            'Geburtsjahr': '',
-            'Letzte-Auswertung': parsed['turnierende'],
-            'DWZ': parsed['dwz'],
-            'Index': parsed['dwzindex'],
-            'FIDE-Elo': parsed['fideelo'],
-            'FIDE-Titel': parsed['fidetitel'],
-            'FIDE-ID': parsed['fideid'],
-            'FIDE-Land': '',
-        })
-    return records
+            csv_data = zf.read('spieler.csv')
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'wb') as f:
+            f.write(csv_data)
+
+        line_count = csv_data.count(b'\n')
+        print(f"  ✓ Extracted spieler.csv ({line_count} lines) to {filename}")
+        return True
+
+    except requests.exceptions.RequestException as e:
+        print(f"  ✗ Error downloading player database: {e}")
+        return False
+    except zipfile.BadZipFile:
+        print(f"  ✗ Downloaded file is not a valid ZIP archive")
+        return False
+    except Exception as e:
+        print(f"  ✗ Error processing player database: {e}")
+        return False
+
 
 def save_to_json(players, filename):
     """
@@ -154,58 +152,6 @@ def save_to_json(players, filename):
     except Exception as e:
         print(f"Error saving to JSON: {e}")
 
-def update_spieler_csv(new_records, filename):
-    """
-    Merges new player records into the existing spieler.csv.
-    Existing entries (matched by ID + VKZ + Mgl-Nr) are updated,
-    new entries are appended.
-    """
-    fieldnames = SPIELER_CSV_HEADER.split(',')
-    existing_rows = []
-    existing_keys = set()
-
-    # Read existing CSV
-    if os.path.exists(filename):
-        try:
-            with open(filename, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    key = (row.get('ID', ''), row.get('VKZ', ''), row.get('Mgl-Nr', ''))
-                    existing_keys.add(key)
-                    existing_rows.append(row)
-        except Exception as e:
-            print(f"Error reading existing {filename}: {e}")
-
-    added = 0
-    updated = 0
-    for record in new_records:
-        key = (record['ID'], record['VKZ'], record['Mgl-Nr'])
-        if key in existing_keys:
-            # Update existing row
-            for i, row in enumerate(existing_rows):
-                if (row.get('ID', ''), row.get('VKZ', ''), row.get('Mgl-Nr', '')) == key:
-                    # Preserve fields the API doesn't provide
-                    for field in ['Geschlecht', 'Spielberechtigung', 'Geburtsjahr', 'FIDE-Land']:
-                        if row.get(field):
-                            record[field] = row[field]
-                    existing_rows[i] = record
-                    updated += 1
-                    break
-        else:
-            existing_keys.add(key)
-            existing_rows.append(record)
-            added += 1
-
-    try:
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_MINIMAL)
-            writer.writeheader()
-            writer.writerows(existing_rows)
-        print(f"Successfully updated {filename}: {added} added, {updated} updated, {len(existing_rows)} total")
-    except Exception as e:
-        print(f"Error writing {filename}: {e}")
-
 
 def main():
     # List of ZPS numbers to fetch player data from
@@ -217,13 +163,17 @@ def main():
     base_url = "https://www.schachbund.de/php/dewis/verein.php"
     whitelist_file = "data/filter-whitelist.json"
     spieler_file = "data/spieler.csv"
+    spieler_url = "https://dwz.svw.info/services/files/export/csv/LV-0-csv_v2.zip"
 
     all_players = []
-    all_records = []
 
-    print(f"Fetching player data from {len(zps_numbers)} ZPS number(s)...\n")
+    # Download full player database
+    print("=== Updating player database ===\n")
+    download_spieler_csv(spieler_url, spieler_file)
 
-    # Fetch players from each ZPS number
+    # Fetch club-specific player names for whitelist
+    print(f"\n=== Updating whitelist from {len(zps_numbers)} club(s) ===\n")
+
     for zps in zps_numbers:
         url = f"{base_url}?zps={zps}&format=csv"
         print(f"Fetching data for ZPS: {zps}")
@@ -233,38 +183,25 @@ def main():
         if data:
             print(f"  ✓ Successfully fetched {len(data)} records")
 
-            # Extract player names for whitelist
             players = extract_player_names(data)
             print(f"  ✓ Extracted {len(players)} player names")
             all_players.extend(players)
-
-            # Extract full player records for spieler.csv
-            records = extract_player_records(data)
-            print(f"  ✓ Extracted {len(records)} player records")
-            all_records.extend(records)
         else:
             print(f"  ✗ Failed to fetch data for ZPS: {zps}")
 
-        print()  # Empty line for readability
+        print()
 
     if all_players:
-        # Remove duplicates while preserving order
         unique_players = list(dict.fromkeys(all_players))
 
         print(f"Total players fetched: {len(all_players)}")
         print(f"Unique players after deduplication: {len(unique_players)}")
 
-        # Display first few names
         print("\nFirst 10 player names:")
         for i, name in enumerate(unique_players[:10]):
             print(f"  {i+1}. {name}")
 
-        # Save to JSON file
         save_to_json(unique_players, whitelist_file)
-
-        # Update spieler.csv
-        print()
-        update_spieler_csv(all_records, spieler_file)
     else:
         print("Failed to fetch any player data")
 
