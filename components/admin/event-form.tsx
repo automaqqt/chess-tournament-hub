@@ -32,6 +32,9 @@ type FormState = {
     type?: string[];
     isPremier?: string[];
     isEloRequired?: string[];
+    isTeamMode?: string[];
+    minTeamSize?: string[];
+    maxTeamSize?: string[];
     customFields?: string[];
     registrationEndDate?: string[];
     pdfFile?: string[];
@@ -69,6 +72,9 @@ type EventDefaultValues = {
   type?: string | null;
   isPremier?: boolean;
   isEloRequired?: boolean;
+  isTeamMode?: boolean;
+  minTeamSize?: number;
+  maxTeamSize?: number;
   customFields?: string | null;
   emailText?: string | null;
   organiserEmail?: string | null;
@@ -113,6 +119,9 @@ export default function EventForm({ event, defaultValues }: { event?: Event; def
         type: defaultValues.type || 'keine',
         isPremier: defaultValues.isPremier || false,
         isEloRequired: defaultValues.isEloRequired || false,
+        isTeamMode: defaultValues.isTeamMode || false,
+        minTeamSize: defaultValues.minTeamSize ?? 2,
+        maxTeamSize: defaultValues.maxTeamSize ?? 4,
         customFields: defaultValues.customFields || '',
         emailText: defaultValues.emailText || 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n',
         organiserEmail: defaultValues.organiserEmail || '',
@@ -122,7 +131,9 @@ export default function EventForm({ event, defaultValues }: { event?: Event; def
     // New event - empty form
     return {
       title: '', description: '', fullDetails: '', date: '', endDate: '', location: '',
-      entryFee: 0, type: 'keine', isPremier: false, isEloRequired: false, customFields: '',
+      entryFee: 0, type: 'keine', isPremier: false, isEloRequired: false,
+      isTeamMode: false, minTeamSize: 2, maxTeamSize: 4,
+      customFields: '',
       emailText: 'Wir haben Ihre Anmeldung erhalten und freuen uns sehr, dass Sie dabei sind.\n',
       organiserEmail: ''
     };
@@ -366,7 +377,43 @@ export default function EventForm({ event, defaultValues }: { event?: Event; def
           <Checkbox id="isEloRequired" name="isEloRequired" checked={!!formData.isEloRequired} onCheckedChange={(checked) => setFormData(prev => ({...prev, isEloRequired: !!checked}))} />
           <Label htmlFor="isEloRequired" className="text-sm font-medium leading-none">Nur DSB Mitglieder zulassen</Label>
         </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox id="isTeamMode" name="isTeamMode" checked={!!formData.isTeamMode} onCheckedChange={(checked) => setFormData(prev => ({...prev, isTeamMode: !!checked}))} />
+          <Label htmlFor="isTeamMode" className="text-sm font-medium leading-none">Team-Turnier (Mannschaftsanmeldung)</Label>
+        </div>
       </div>
+
+      {formData.isTeamMode && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-md border border-zinc-700/50 p-4">
+          <div className="space-y-2">
+            <Label htmlFor="minTeamSize">Mindestanzahl Spieler pro Team</Label>
+            <Input
+              id="minTeamSize"
+              name="minTeamSize"
+              type="number"
+              min={1}
+              value={formData.minTeamSize ?? 2}
+              onChange={handleChange}
+            />
+            {state.errors?.minTeamSize && <p className="text-red-500 text-sm">{state.errors.minTeamSize[0]}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="maxTeamSize">Maximalanzahl Spieler pro Team</Label>
+            <Input
+              id="maxTeamSize"
+              name="maxTeamSize"
+              type="number"
+              min={1}
+              value={formData.maxTeamSize ?? 4}
+              onChange={handleChange}
+            />
+            {state.errors?.maxTeamSize && <p className="text-red-500 text-sm">{state.errors.maxTeamSize[0]}</p>}
+          </div>
+          <p className="text-xs text-muted-foreground md:col-span-2">
+            Bei aktiviertem Team-Modus melden sich Teams mit Teamnamen und Spielerliste an. Spielerautocomplete und DSB-Mitgliedsprüfung sind dabei deaktiviert.
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-end"><SubmitButton isEditing={isEditing} /></div>
     </form>

@@ -5,6 +5,7 @@ import type { Event } from '@prisma/client';
 type EventWithCount = Event & {
   _count: {
     registrations: number;
+    teams?: number;
   };
 };
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,11 +67,19 @@ export default function EventCard({ event }: { event: EventWithCount }) {
               <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300">
                 <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-green-400" />
               </div>
-              <RegistrationListModal eventId={event.id} registrationCount={event._count.registrations}>
-                <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 cursor-pointer hover:text-primary hover:underline underline-offset-2 decoration-primary/50 hover:decoration-primary transition-all duration-200">
-                  {event._count.registrations} Anmeldung{event._count.registrations !== 1 ? 'en' : ''}
-                </span>
-              </RegistrationListModal>
+              {event.isTeamMode ? (
+                <RegistrationListModal eventId={event.id} registrationCount={event._count.teams ?? 0}>
+                  <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 cursor-pointer hover:text-primary hover:underline underline-offset-2 decoration-primary/50 hover:decoration-primary transition-all duration-200">
+                    {event._count.teams ?? 0} Team{(event._count.teams ?? 0) !== 1 ? 's' : ''}
+                  </span>
+                </RegistrationListModal>
+              ) : (
+                <RegistrationListModal eventId={event.id} registrationCount={event._count.registrations}>
+                  <span className="text-gray-300 group-hover:text-gray-100 transition-colors duration-300 cursor-pointer hover:text-primary hover:underline underline-offset-2 decoration-primary/50 hover:decoration-primary transition-all duration-200">
+                    {event._count.registrations} Anmeldung{event._count.registrations !== 1 ? 'en' : ''}
+                  </span>
+                </RegistrationListModal>
+              )}
             </div>
 
             <div className="flex items-center gap-2.5">

@@ -64,23 +64,227 @@ const registrationSchema = z.object({
   });
   
   
-  export async function registerForEvent(prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
-    const rawData = Object.fromEntries(formData.entries());
-    
-    const validatedFields = registrationSchema.safeParse(rawData);
-  
+  const teamMemberSchema = z.object({
+    firstName: z.string().min(2, { message: 'Vorname muss mindestens 2 Zeichen lang sein.' }),
+    lastName: z.string().min(2, { message: 'Nachname muss mindestens 2 Zeichen lang sein.' }),
+    birthYear: z.coerce.number().min(1920, 'Ungültiges Geburtsjahr.').max(new Date().getFullYear(), 'Ungültiges Geburtsjahr.'),
+    elo: z.string().optional(),
+  });
+
+  const teamRegistrationSchema = z.object({
+    teamName: z.string().min(2, { message: 'Teamname muss mindestens 2 Zeichen lang sein.' }),
+    email: z.string().email({ message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' }),
+    eventId: z.string(),
+    feeCategory: z.string().optional(),
+    agreeToTerms: z.preprocess((val) => val === 'on', z.boolean()).refine(val => val === true, {
+      message: 'Sie müssen den Allgemeinen Geschäftsbedingungen und der Datenschutzerklärung zustimmen.',
+    }),
+    isPubliclyVisible: z.preprocess((val) => val === 'on', z.boolean()).optional(),
+  });
+
+  type EventForTeamRegistration = {
+    id: string;
+    title: string;
+    date: Date;
+    endDate: Date | null;
+    location: string;
+    fees: unknown;
+    isTeamMode: boolean;
+    minTeamSize: number;
+    maxTeamSize: number;
+    customFields: string;
+    emailText: string;
+    organiserEmail: string | null;
+    registrationEndDate: Date;
+  };
+
+  async function registerTeamForEvent(event: EventForTeamRegistration, formData: FormData, rawData: Record<string, FormDataEntryValue>) {
+    const validatedFields = teamRegistrationSchema.safeParse(rawData);
     if (!validatedFields.success) {
       return {
         type: 'error',
         errors: validatedFields.error.flatten().fieldErrors,
-        fields: rawData, 
+        fields: rawData,
       };
     }
 
-    // Check if fee category is required
-    const event = await prisma.event.findUnique({ where: { id: validatedFields.data.eventId } });
+    // Reconstruct the members array from `members[i].field` form entries.
+    const memberMap = new Map<number, { firstName?: string; lastName?: string; birthYear?: string; elo?: string }>();
+    const memberKeyRegex = /^members\[(\d+)\]\.(firstName|lastName|birthYear|elo)$/;
+    for (const [key, value] of formData.entries()) {
+      const match = key.match(memberKeyRegex);
+      if (!match) continue;
+      const idx = Number(match[1]);
+      const field = match[2] as 'firstName' | 'lastName' | 'birthYear' | 'elo';
+      const current = memberMap.get(idx) ?? {};
+      current[field] = typeof value === 'string' ? value : '';
+      memberMap.set(idx, current);
+    }
+    const rawMembers = [...memberMap.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, m]) => m);
+
+    if (rawMembers.length < event.minTeamSize || rawMembers.length > event.maxTeamSize) {
+      return {
+        type: 'error',
+        errors: { members: [`Bitte mindestens ${event.minTeamSize} und höchstens ${event.maxTeamSize} Spieler eintragen.`] },
+        fields: rawData,
+      };
+    }
+
+    const memberErrors: Record<string, string[]> = {};
+    const parsedMembers: { firstName: string; lastName: string; birthYear: number; elo: number }[] = [];
+    rawMembers.forEach((m, i) => {
+      const parsed = teamMemberSchema.safeParse(m);
+      if (!parsed.success) {
+        const fieldErrors = parsed.error.flatten().fieldErrors;
+        const firstMessage = Object.values(fieldErrors).flat()[0] ?? 'Ungültige Eingabe.';
+        memberErrors[`members.${i}`] = [firstMessage];
+        return;
+      }
+      const eloRaw = parsed.data.elo?.trim() ?? '';
+      let elo = 0;
+      if (eloRaw !== '') {
+        const eloNumber = parseInt(eloRaw, 10);
+        if (isNaN(eloNumber) || eloNumber < 100 || eloNumber > 3000) {
+          memberErrors[`members.${i}`] = ['DWZ muss zwischen 100 und 3000 liegen.'];
+          return;
+        }
+        elo = eloNumber;
+      }
+      parsedMembers.push({
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        birthYear: parsed.data.birthYear,
+        elo,
+      });
+    });
+
+    if (Object.keys(memberErrors).length > 0) {
+      return { type: 'error', errors: memberErrors, fields: rawData };
+    }
+
+    const eventFees = Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : [];
+    if (eventFees.length > 0 && (!validatedFields.data.feeCategory || validatedFields.data.feeCategory.trim() === '')) {
+      return {
+        type: 'error',
+        errors: { feeCategory: ['Sie müssen eine Gebührenkategorie auswählen.'] },
+        fields: rawData,
+      };
+    }
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (yesterday > event.registrationEndDate) {
+      return { type: 'error', message: 'Die Anmeldefrist für diese Veranstaltung ist abgelaufen.' };
+    }
+
+    // Custom fields validation (mandatory if defined on event), reused logic.
+    const additionalInfo: Record<string, string> = {};
+    if (event.customFields) {
+      const customFieldKeys = event.customFields.split(',').map(f => f.trim()).filter(f => f);
+      const missingFields: string[] = [];
+      for (const key of customFieldKeys) {
+        const value = formData.get(key);
+        if (typeof value !== 'string' || value.trim() === '') {
+          missingFields.push(key);
+        } else {
+          additionalInfo[key] = value.trim();
+        }
+      }
+      if (missingFields.length > 0) {
+        const fieldErrors: Record<string, string[]> = {};
+        missingFields.forEach(field => {
+          fieldErrors[field] = [`${field} ist erforderlich.`];
+        });
+        return { type: 'error', errors: fieldErrors, fields: rawData };
+      }
+    }
+
+    const { teamName, email, feeCategory, isPubliclyVisible } = validatedFields.data;
+
+    try {
+      await prisma.team.create({
+        data: {
+          name: teamName,
+          contactEmail: email,
+          feeCategory: feeCategory || 'Standard',
+          isPubliclyVisible: isPubliclyVisible !== undefined ? isPubliclyVisible : true,
+          additionalInfo,
+          eventId: event.id,
+          members: {
+            create: parsedMembers.map(m => ({
+              firstName: m.firstName,
+              lastName: m.lastName,
+              email,
+              birthYear: m.birthYear,
+              verein: 'N/A',
+              elo: m.elo,
+              fideElo: 0,
+              feeCategory: feeCategory || 'Standard',
+              additionalInfo,
+              isPubliclyVisible: isPubliclyVisible !== undefined ? isPubliclyVisible : true,
+              eventId: event.id,
+            })),
+          },
+        },
+      });
+
+      const captain = parsedMembers[0];
+      await sendRegistrationConfirmationEmail({
+        firstName: captain.firstName,
+        lastName: captain.lastName,
+        email,
+        eventName: event.title,
+        eventDate: new Date(event.date).toLocaleDateString('de-DE', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Europe/Berlin',
+        }),
+        eventDateRaw: new Date(event.date),
+        eventEndDateRaw: event.endDate ? new Date(event.endDate) : undefined,
+        eventLocation: event.location,
+        customEmailText: event.emailText || undefined,
+        organiserEmail: event.organiserEmail || undefined,
+      });
+
+      revalidatePath('/');
+      return { type: 'success', message: `Team "${teamName}" erfolgreich angemeldet!` };
+    } catch (error) {
+      console.error('Team registration error:', error);
+      return { type: 'error', message: 'Irgendwas ist schief, versuch es erneut.' };
+    }
+  }
+
+  export async function registerForEvent(prevState: { type: string; message?: string; errors?: Record<string, string[]>; fields?: Record<string, unknown> } | null, formData: FormData) {
+    const rawData = Object.fromEntries(formData.entries());
+
+    const eventIdFromForm = typeof rawData.eventId === 'string' ? rawData.eventId : '';
+    if (!eventIdFromForm) {
+      return { type: 'error', message: 'Veranstaltung nicht gefunden.' };
+    }
+
+    const event = await prisma.event.findUnique({ where: { id: eventIdFromForm } });
     if (!event) {
       return { type: 'error', message: 'Veranstaltung nicht gefunden.' };
+    }
+
+    if (event.isTeamMode) {
+      return registerTeamForEvent(event, formData, rawData);
+    }
+
+    const validatedFields = registrationSchema.safeParse(rawData);
+
+    if (!validatedFields.success) {
+      return {
+        type: 'error',
+        errors: validatedFields.error.flatten().fieldErrors,
+        fields: rawData,
+      };
     }
 
     const eventFees = Array.isArray(event.fees) ? event.fees as { name: string; price: number }[] : [];
@@ -278,6 +482,9 @@ const registrationSchema = z.object({
     type: z.enum(['keine', 'Einsteiger', 'Fortgeschritten', 'Wettkampf Schach']),
     isPremier: z.preprocess((val) => val === 'on', z.boolean()).optional(),
     isEloRequired: z.preprocess((val) => val === 'on', z.boolean()).optional(),
+    isTeamMode: z.preprocess((val) => val === 'on', z.boolean()).optional(),
+    minTeamSize: z.coerce.number().int().min(1).optional(),
+    maxTeamSize: z.coerce.number().int().min(1).optional(),
     customFields: z.string().optional(),
     emailText: z.string().optional(),
     organiserEmail: z.string().email({ message: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' }).optional().or(z.literal('')),
@@ -389,6 +596,18 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         }
     }
 
+    const isTeamMode = eventData.isTeamMode || false;
+    const minTeamSize = isTeamMode ? (eventData.minTeamSize ?? 2) : 2;
+    const maxTeamSize = isTeamMode ? (eventData.maxTeamSize ?? 4) : 4;
+
+    if (isTeamMode && minTeamSize > maxTeamSize) {
+        return {
+            type: 'error',
+            errors: { maxTeamSize: ['Maximalanzahl muss größer oder gleich der Mindestanzahl sein.'] },
+            fields: rawData,
+        };
+    }
+
     const dataToSave = {
         ...eventData,
         date: parseDateAsBerlin(eventData.date),
@@ -396,6 +615,9 @@ async function handleEventForm(formData: FormData, eventId?: string) {
         pdfUrl,
         isPremier: eventData.isPremier || false,
         isEloRequired: eventData.isEloRequired !== undefined ? eventData.isEloRequired : false,
+        isTeamMode,
+        minTeamSize,
+        maxTeamSize,
         registrationEndDate: parseDateAsBerlin(eventData.registrationEndDate),
     };
 
@@ -440,14 +662,12 @@ export async function deleteEvent(eventId: string) {
     }
 
     try {
-        // Must delete dependent registrations first due to foreign key constraints
-        await prisma.registration.deleteMany({
-            where: { eventId: eventId },
-        });
-
-        await prisma.event.delete({
-            where: { id: eventId },
-        });
+        // Must delete dependent registrations + teams first due to foreign key constraints
+        await prisma.$transaction([
+            prisma.registration.deleteMany({ where: { eventId } }),
+            prisma.team.deleteMany({ where: { eventId } }),
+            prisma.event.delete({ where: { id: eventId } }),
+        ]);
     } catch (error) {
         console.error('Event deletion error:', error);
         return { type: 'error', message: 'Datenbankfehler. Veranstaltung konnte nicht gelöscht werden.' };
@@ -455,6 +675,179 @@ export async function deleteEvent(eventId: string) {
 
     revalidatePath('/');
     revalidatePath('/admin/dashboard');
+}
+
+// --- Team admin actions ---
+const teamUpdateMemberSchema = z.object({
+    id: z.string().optional(), // existing registration id; absent for new members
+    firstName: z.string().min(2, 'Vorname muss mindestens 2 Zeichen lang sein.'),
+    lastName: z.string().min(2, 'Nachname muss mindestens 2 Zeichen lang sein.'),
+    birthYear: z.coerce.number().min(1920, 'Ungültiges Geburtsjahr.').max(new Date().getFullYear(), 'Ungültiges Geburtsjahr.'),
+    elo: z.coerce.number().optional(),
+});
+
+export async function updateTeam(teamId: string, prevState: { type: string; message?: string; errors?: Record<string, string[]> } | null, formData: FormData) {
+    const isAuthenticated = await verifyAuth();
+    if (!isAuthenticated) {
+        return { type: 'error' as const, message: 'Nicht autorisiert. Bitte melden Sie sich an.' };
+    }
+
+    const name = String(formData.get('name') ?? '').trim();
+    const contactEmail = String(formData.get('contactEmail') ?? '').trim();
+    const feeCategory = String(formData.get('feeCategory') ?? '').trim();
+    const isPubliclyVisible = formData.get('isPubliclyVisible') === 'on';
+
+    if (name.length < 2) {
+        return { type: 'error' as const, errors: { name: ['Teamname muss mindestens 2 Zeichen lang sein.'] } };
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail)) {
+        return { type: 'error' as const, errors: { contactEmail: ['Bitte geben Sie eine gültige E-Mail-Adresse ein.'] } };
+    }
+
+    const memberMap = new Map<number, { id?: string; firstName?: string; lastName?: string; birthYear?: string; elo?: string }>();
+    const memberKeyRegex = /^members\[(\d+)\]\.(id|firstName|lastName|birthYear|elo)$/;
+    for (const [key, value] of formData.entries()) {
+        const match = key.match(memberKeyRegex);
+        if (!match) continue;
+        const idx = Number(match[1]);
+        const field = match[2] as 'id' | 'firstName' | 'lastName' | 'birthYear' | 'elo';
+        const current = memberMap.get(idx) ?? {};
+        current[field] = typeof value === 'string' ? value : '';
+        memberMap.set(idx, current);
+    }
+    const rawMembers = [...memberMap.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([, m]) => m);
+
+    const team = await prisma.team.findUnique({
+        where: { id: teamId },
+        include: { event: true, members: { select: { id: true } } },
+    });
+    if (!team) {
+        return { type: 'error' as const, message: 'Team nicht gefunden.' };
+    }
+
+    if (rawMembers.length < team.event.minTeamSize || rawMembers.length > team.event.maxTeamSize) {
+        return {
+            type: 'error' as const,
+            errors: { members: [`Bitte mindestens ${team.event.minTeamSize} und höchstens ${team.event.maxTeamSize} Spieler eintragen.`] },
+        };
+    }
+
+    const memberErrors: Record<string, string[]> = {};
+    const parsedMembers: { id?: string; firstName: string; lastName: string; birthYear: number; elo: number }[] = [];
+    rawMembers.forEach((m, i) => {
+        const parsed = teamUpdateMemberSchema.safeParse(m);
+        if (!parsed.success) {
+            const fieldErrors = parsed.error.flatten().fieldErrors;
+            const firstMessage = Object.values(fieldErrors).flat()[0] ?? 'Ungültige Eingabe.';
+            memberErrors[`members.${i}`] = [firstMessage];
+            return;
+        }
+        let elo = 0;
+        if (parsed.data.elo !== undefined && !Number.isNaN(parsed.data.elo) && parsed.data.elo !== 0) {
+            if (parsed.data.elo < 100 || parsed.data.elo > 3000) {
+                memberErrors[`members.${i}`] = ['DWZ muss zwischen 100 und 3000 liegen.'];
+                return;
+            }
+            elo = parsed.data.elo;
+        }
+        parsedMembers.push({
+            id: parsed.data.id && parsed.data.id !== '' ? parsed.data.id : undefined,
+            firstName: parsed.data.firstName,
+            lastName: parsed.data.lastName,
+            birthYear: parsed.data.birthYear,
+            elo,
+        });
+    });
+
+    if (Object.keys(memberErrors).length > 0) {
+        return { type: 'error' as const, errors: memberErrors };
+    }
+
+    const existingMemberIds = new Set(team.members.map(m => m.id));
+    const keptIds = new Set(parsedMembers.filter(m => m.id).map(m => m.id as string));
+    const toDelete = [...existingMemberIds].filter(id => !keptIds.has(id));
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.team.update({
+                where: { id: teamId },
+                data: {
+                    name,
+                    contactEmail,
+                    feeCategory: feeCategory || 'Standard',
+                    isPubliclyVisible,
+                },
+            });
+
+            if (toDelete.length > 0) {
+                await tx.registration.deleteMany({ where: { id: { in: toDelete } } });
+            }
+
+            for (const m of parsedMembers) {
+                if (m.id) {
+                    await tx.registration.update({
+                        where: { id: m.id },
+                        data: {
+                            firstName: m.firstName,
+                            lastName: m.lastName,
+                            birthYear: m.birthYear,
+                            elo: m.elo,
+                            email: contactEmail,
+                            feeCategory: feeCategory || 'Standard',
+                            isPubliclyVisible,
+                        },
+                    });
+                } else {
+                    await tx.registration.create({
+                        data: {
+                            firstName: m.firstName,
+                            lastName: m.lastName,
+                            birthYear: m.birthYear,
+                            elo: m.elo,
+                            fideElo: 0,
+                            verein: 'N/A',
+                            email: contactEmail,
+                            feeCategory: feeCategory || 'Standard',
+                            isPubliclyVisible,
+                            additionalInfo: {},
+                            eventId: team.eventId,
+                            teamId,
+                        },
+                    });
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Team update error:', error);
+        return { type: 'error' as const, message: 'Team konnte nicht gespeichert werden.' };
+    }
+
+    revalidatePath('/');
+    revalidatePath(`/admin/dashboard/events/${team.eventId}`);
+    return { type: 'success' as const, message: 'Team aktualisiert.' };
+}
+
+export async function deleteTeam(teamId: string, eventId: string) {
+    const isAuthenticated = await verifyAuth();
+    if (!isAuthenticated) {
+        return { type: 'error', message: 'Nicht autorisiert. Bitte melden Sie sich an.' };
+    }
+
+    try {
+        await prisma.$transaction([
+            prisma.registration.deleteMany({ where: { teamId } }),
+            prisma.team.delete({ where: { id: teamId } }),
+        ]);
+    } catch (error) {
+        console.error('Team deletion error:', error);
+        return { type: 'error', message: 'Team konnte nicht gelöscht werden.' };
+    }
+
+    revalidatePath('/');
+    revalidatePath('/admin/dashboard');
+    revalidatePath(`/admin/dashboard/events/${eventId}`);
 }
 
 // --- NEW: Delete Registration Action ---

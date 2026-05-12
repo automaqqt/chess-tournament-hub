@@ -23,12 +23,29 @@ model Event {
   type          String         @default("keine")
   isPremier     Boolean        @default(false)
   isEloRequired Boolean        @default(true) // Whether ELO is required for registration
+  isTeamMode    Boolean        @default(false) // Whether the event is a team tournament
+  minTeamSize   Int            @default(2)
+  maxTeamSize   Int            @default(4)
   customFields  String         @default("")
   emailText     String         @default("") // Custom email text for registration confirmations
   organiserEmail String?       // Optional organiser email for BCC on registrations
   registrations Registration[]
+  teams         Team[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+}
+
+model Team {
+  id                String         @id @default(cuid())
+  name              String
+  contactEmail      String
+  feeCategory       String         @default("Standard")
+  isPubliclyVisible Boolean        @default(true)
+  additionalInfo    Json
+  event             Event          @relation(fields: [eventId], references: [id])
+  eventId           String
+  members           Registration[]
+  createdAt         DateTime       @default(now())
 }
 
 model Registration {
@@ -46,5 +63,7 @@ model Registration {
 
   event     Event    @relation(fields: [eventId], references: [id])
   eventId   String
+  team      Team?    @relation(fields: [teamId], references: [id])
+  teamId    String?
   createdAt DateTime @default(now())
 }

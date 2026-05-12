@@ -28,7 +28,8 @@ export default async function HomePage() {
     include: {
       _count: {
         select: {
-          registrations: true
+          registrations: true,
+          teams: true,
         }
       }
     },

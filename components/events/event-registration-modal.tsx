@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PlayerAutocomplete from '@/components/events/player-autocomplete';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Plus, X } from 'lucide-react';
 
 // Define the proper type based on what registerForEvent actually returns
 type RegistrationState = {
@@ -42,6 +42,15 @@ const initialFormValues = {
     agreeToTerms: false,
     isPubliclyVisible: true,
 };
+
+type TeamMember = {
+  firstName: string;
+  lastName: string;
+  birthYear: string;
+  elo: string;
+};
+
+const emptyMember = (): TeamMember => ({ firstName: '', lastName: '', birthYear: '', elo: '' });
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -91,6 +100,19 @@ export default function RegistrationModal({ event, children }: { event: Event; c
   };
   const [formValues, setFormValues] = useState<FormValues>(initialFormValues as FormValues);
 
+  const minTeamSize = event.isTeamMode ? Math.max(1, event.minTeamSize) : 0;
+  const maxTeamSize = event.isTeamMode ? Math.max(minTeamSize, event.maxTeamSize) : 0;
+
+  const [teamName, setTeamName] = useState('');
+  const [members, setMembers] = useState<TeamMember[]>(() =>
+    event.isTeamMode ? Array.from({ length: minTeamSize }, emptyMember) : []
+  );
+
+  const resetTeamFields = () => {
+    setTeamName('');
+    setMembers(event.isTeamMode ? Array.from({ length: minTeamSize }, emptyMember) : []);
+  };
+
   useEffect(() => {
     if (state.type === 'success') {
       if ('message' in state) {
@@ -100,6 +122,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
       setFormValues(initialFormValues); // Reset form on success
       setIsConfirmedSubmit(false); // Reset confirmation flag
       setSelectedPlayer(null); // Reset selected player
+      resetTeamFields();
     } else if (state.type === 'error') {
       if ('message' in state && state.message) {
         toast.error(state.message, { duration: 10000 });
@@ -110,7 +133,20 @@ export default function RegistrationModal({ event, children }: { event: Event; c
         setFormValues(prev => ({...prev, ...state.fields as Partial<FormValues>}));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+
+  const updateMember = (index: number, field: keyof TeamMember, value: string) => {
+    setMembers(prev => prev.map((m, i) => (i === index ? { ...m, [field]: value } : m)));
+  };
+
+  const addMember = () => {
+    setMembers(prev => (prev.length < maxTeamSize ? [...prev, emptyMember()] : prev));
+  };
+
+  const removeMember = (index: number) => {
+    setMembers(prev => (prev.length > minTeamSize ? prev.filter((_, i) => i !== index) : prev));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -143,6 +179,10 @@ export default function RegistrationModal({ event, children }: { event: Event; c
 
   // Check if form has been started (any field filled)
   const isFormTouched = () => {
+    if (event.isTeamMode) {
+      if (teamName.trim() !== '' || formValues.email !== '') return true;
+      return members.some(m => m.firstName !== '' || m.lastName !== '' || m.birthYear !== '' || m.elo !== '');
+    }
     return formValues.firstName !== '' ||
            formValues.lastName !== '' ||
            formValues.email !== '' ||
@@ -168,6 +208,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
     setFormValues(initialFormValues);
     setIsConfirmedSubmit(false); // Reset confirmation flag
     setSelectedPlayer(null); // Reset selected player
+    resetTeamFields();
   };
 
   // Cancel close confirmation
@@ -236,6 +277,125 @@ export default function RegistrationModal({ event, children }: { event: Event; c
               <input type="hidden" name="birthYear" value={formValues.birthYear} />
             )}
             <div className="grid gap-4 py-4">
+              {event.isTeamMode ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="teamName">Teamname</Label>
+                    <Input
+                      id="teamName"
+                      name="teamName"
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      placeholder="z.B. Schachzwerge A"
+                    />
+                    {state.errors?.teamName && <p className="text-red-500 text-sm">{state.errors.teamName[0]}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Kontakt-E-Mail (Teamleitung)</Label>
+                    <Input id="email" name="email" type="email" value={formValues.email} onChange={handleChange} />
+                    {state.errors?.email && <p className="text-red-500 text-sm">{state.errors.email[0]}</p>}
+                  </div>
+
+                  <div className="space-y-3 pt-2 border-t border-zinc-700">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-text-light">
+                        Spieler ({members.length} / {maxTeamSize})
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Mindestens {minTeamSize}, höchstens {maxTeamSize}.
+                      </p>
+                    </div>
+                    {state.errors?.members && <p className="text-red-500 text-sm">{state.errors.members[0]}</p>}
+
+                    {members.map((member, index) => (
+                      <div key={index} className="rounded-md border border-zinc-700/60 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {index === 0 ? 'Spieler 1 (Teamleitung)' : `Spieler ${index + 1}`}
+                          </span>
+                          {members.length > minTeamSize && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeMember(index)}
+                              className="h-7 px-2 text-muted-foreground hover:text-red-500"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            placeholder="Vorname"
+                            name={`members[${index}].firstName`}
+                            value={member.firstName}
+                            onChange={(e) => updateMember(index, 'firstName', e.target.value)}
+                          />
+                          <Input
+                            placeholder="Nachname"
+                            name={`members[${index}].lastName`}
+                            value={member.lastName}
+                            onChange={(e) => updateMember(index, 'lastName', e.target.value)}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Geburtsjahr"
+                            name={`members[${index}].birthYear`}
+                            value={member.birthYear}
+                            onChange={(e) => updateMember(index, 'birthYear', e.target.value)}
+                          />
+                          <Input
+                            type="number"
+                            placeholder="DWZ (optional)"
+                            name={`members[${index}].elo`}
+                            value={member.elo}
+                            onChange={(e) => updateMember(index, 'elo', e.target.value)}
+                          />
+                        </div>
+                        {state.errors?.[`members.${index}`] && (
+                          <p className="text-red-500 text-sm">{state.errors[`members.${index}`][0]}</p>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addMember}
+                      disabled={members.length >= maxTeamSize}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Spieler hinzufügen
+                    </Button>
+                    <input type="hidden" name="memberCount" value={members.length} />
+                  </div>
+
+                  {feeOptions.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="feeCategory">Startgeld-Kategorie</Label>
+                      <Select name="feeCategory" value={formValues.feeCategory} onValueChange={handleSelectChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Kategorie auswählen..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(feeOptions as { name: string; price: number }[]).map((fee) => (
+                            <SelectItem key={fee.name} value={fee.name}>
+                              {fee.name} - {fee.price}€
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {state.errors?.feeCategory && <p className="text-red-500 text-sm">{state.errors.feeCategory[0]}</p>}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
               {event.isEloRequired ? (
                 <>
                   <div className="space-y-2">
@@ -279,7 +439,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                   )}
                 </>
               )}
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">E-Mail</Label>
                 <Input id="email" name="email" type="email" value={formValues.email} onChange={handleChange} />
@@ -369,6 +529,8 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                 <Input id="verein" name="verein" value={formValues.verein} onChange={handleChange} />
                 {state.errors?.verein && <p className="text-red-500 text-sm">{state.errors.verein[0]}</p>}
               </div>
+                </>
+              )}
 
               {customFields.length > 0 && (
                 <div className="pt-4 mt-4 border-t border-zinc-700 space-y-4">
@@ -479,6 +641,34 @@ export default function RegistrationModal({ event, children }: { event: Event; c
         
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-4 py-4">
+            {event.isTeamMode ? (
+              <>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div><strong>Teamname:</strong></div>
+                  <div>{teamName}</div>
+                  <div><strong>Kontakt-E-Mail:</strong></div>
+                  <div>{formValues.email}</div>
+                  {feeOptions.length > 0 && (
+                    <>
+                      <div><strong>Startgeld-Kategorie:</strong></div>
+                      <div>{formValues.feeCategory || 'Keine Auswahl'}</div>
+                    </>
+                  )}
+                </div>
+                <div className="border-t border-zinc-700 pt-4">
+                  <h4 className="font-semibold text-text-light mb-2">Spieler ({members.length}):</h4>
+                  <ul className="space-y-1 text-sm">
+                    {members.map((m, i) => (
+                      <li key={i}>
+                        <strong>{i + 1}.</strong> {m.firstName} {m.lastName}
+                        {m.birthYear && ` (${m.birthYear})`}
+                        {m.elo && ` – DWZ ${m.elo}`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : (
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><strong>Vorname:</strong></div>
               <div>{formValues.firstName}</div>
@@ -509,6 +699,7 @@ export default function RegistrationModal({ event, children }: { event: Event; c
                 </>
               )}
             </div>
+            )}
 
             {customFields.length > 0 && (
               <div className="border-t border-zinc-700 pt-4">

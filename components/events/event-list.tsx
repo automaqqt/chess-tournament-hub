@@ -6,6 +6,7 @@ import type { Event } from '@prisma/client';
 type EventWithCount = Event & {
   _count: {
     registrations: number;
+    teams?: number;
   };
 };
 import { Input } from '@/components/ui/input';

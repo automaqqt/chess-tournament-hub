@@ -40,13 +40,18 @@ export async function GET(
       where: { id: eventId },
       include: {
         registrations: {
-          orderBy: { createdAt: 'asc' },
+          include: { team: { select: { name: true } } },
+          orderBy: [{ teamId: 'asc' }, { createdAt: 'asc' }],
         },
       },
     });
 
     if (!event) {
       return new NextResponse('Event not found', { status: 404 });
+    }
+
+    if (format === 'swiss' && event.isTeamMode) {
+      return new NextResponse('Swiss-Format ist für Team-Turniere nicht verfügbar.', { status: 400 });
     }
 
     if (format === 'swiss') {
@@ -144,16 +149,18 @@ export async function GET(
     } else {
       // CSV format (default)
       const dataToExport = event.registrations.map(reg => {
-        const baseData: Record<string, string | number> = {
-          'Vorname': reg.firstName,
-          'Nachname': reg.lastName,
-          'E-Mail': reg.email,
-          'Geburtsjahr': reg.birthYear,
-          'ELO': reg.elo,
-          'Verein': reg.verein,
-          'Startgeld-Kategorie': reg.feeCategory || '',
-          'Anmeldung am': reg.createdAt.toLocaleDateString('de-DE'),
-        };
+        const baseData: Record<string, string | number> = {};
+        if (event.isTeamMode) {
+          baseData['Team'] = reg.team?.name ?? '';
+        }
+        baseData['Vorname'] = reg.firstName;
+        baseData['Nachname'] = reg.lastName;
+        baseData['E-Mail'] = reg.email;
+        baseData['Geburtsjahr'] = reg.birthYear;
+        baseData['ELO'] = reg.elo;
+        baseData['Verein'] = reg.verein;
+        baseData['Startgeld-Kategorie'] = reg.feeCategory || '';
+        baseData['Anmeldung am'] = reg.createdAt.toLocaleDateString('de-DE');
 
         if (reg.additionalInfo && typeof reg.additionalInfo === 'object') {
           const additionalFields = reg.additionalInfo as Record<string, string | number | boolean>;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,11 +16,17 @@ type Registration = {
   isPubliclyVisible: boolean;
 };
 
-type RegistrationResponse = {
-  registrations: Registration[];
-  totalCount: number;
-  publicCount: number;
+type Team = {
+  index: number;
+  id: string | null;
+  name: string | null;
+  memberCount: number;
+  isPubliclyVisible: boolean;
 };
+
+type RegistrationResponse =
+  | { mode: 'solo'; registrations: Registration[]; totalCount: number; publicCount: number }
+  | { mode: 'team'; teams: Team[]; totalCount: number; publicCount: number };
 
 type RegistrationListModalProps = {
   eventId: string;
@@ -29,7 +35,9 @@ type RegistrationListModalProps = {
 };
 
 export default function RegistrationListModal({ eventId, registrationCount, children }: RegistrationListModalProps) {
+  const [mode, setMode] = useState<'solo' | 'team'>('solo');
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [publicCount, setPublicCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -41,7 +49,14 @@ export default function RegistrationListModal({ eventId, registrationCount, chil
       const response = await fetch(`/api/events/${eventId}/registrations`);
       if (response.ok) {
         const data: RegistrationResponse = await response.json();
-        setRegistrations(data.registrations);
+        setMode(data.mode);
+        if (data.mode === 'team') {
+          setTeams(data.teams);
+          setRegistrations([]);
+        } else {
+          setRegistrations(data.registrations);
+          setTeams([]);
+        }
         setTotalCount(data.totalCount);
         setPublicCount(data.publicCount);
       }
@@ -54,7 +69,7 @@ export default function RegistrationListModal({ eventId, registrationCount, chil
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && registrations.length === 0) {
+    if (open && registrations.length === 0 && teams.length === 0) {
       fetchRegistrations();
     }
   };
@@ -85,6 +100,43 @@ export default function RegistrationListModal({ eventId, registrationCount, chil
             <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">Lade Anmeldungen...</div>
             </div>
+          ) : mode === 'team' ? (
+            teams.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-muted-foreground">Noch keine Teams angemeldet.</div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-zinc-800 border-zinc-700">
+                    <TableHead className="w-16">#</TableHead>
+                    <TableHead>Team</TableHead>
+                    <TableHead className="text-right">Spieler</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {teams.map((team) => (
+                    <TableRow
+                      key={team.id || `private-${team.index}`}
+                      className={`border-zinc-800 ${team.isPubliclyVisible ? 'hover:bg-zinc-800' : 'opacity-60'}`}
+                    >
+                      <TableCell className="font-mono text-muted-foreground">{team.index}</TableCell>
+                      <TableCell className="font-medium">
+                        {team.isPubliclyVisible ? (
+                          team.name
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-24 bg-zinc-700 rounded animate-pulse"></div>
+                            <span className="text-xs text-muted-foreground">(privat)</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">{team.memberCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )
           ) : registrations.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-muted-foreground">Noch keine Anmeldungen vorhanden.</div>
@@ -101,8 +153,8 @@ export default function RegistrationListModal({ eventId, registrationCount, chil
               </TableHeader>
               <TableBody>
                 {registrations.map((registration) => (
-                  <TableRow 
-                    key={registration.id || `private-${registration.index}`} 
+                  <TableRow
+                    key={registration.id || `private-${registration.index}`}
                     className={`border-zinc-800 ${registration.isPubliclyVisible ? 'hover:bg-zinc-800' : 'opacity-60'}`}
                   >
                     <TableCell className="font-mono text-muted-foreground">

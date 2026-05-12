@@ -14,10 +14,11 @@ import { Download, FileText, Table } from "lucide-react";
 type ExportModalProps = {
   eventId: string;
   eventTitle: string;
+  isTeamMode?: boolean;
   children: React.ReactNode;
 };
 
-export default function ExportModal({ eventId, eventTitle, children }: ExportModalProps) {
+export default function ExportModal({ eventId, eventTitle, isTeamMode = false, children }: ExportModalProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -41,16 +42,18 @@ export default function ExportModal({ eventId, eventTitle, children }: ExportMod
               CSV Export (Komplett)
             </a>
           </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="w-full justify-start"
-          >
-            <a href={`/api/export/${eventId}?format=swiss`} download>
-              <FileText className="mr-2 h-4 w-4" />
-              Swiss Chess Format (TXT)
-            </a>
-          </Button>
+          {!isTeamMode && (
+            <Button
+              asChild
+              variant="outline"
+              className="w-full justify-start"
+            >
+              <a href={`/api/export/${eventId}?format=swiss`} download>
+                <FileText className="mr-2 h-4 w-4" />
+                Swiss Chess Format (TXT)
+              </a>
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

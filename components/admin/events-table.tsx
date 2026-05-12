@@ -24,6 +24,7 @@ type EventWithCount = {
   title: string;
   date: Date;
   isPremier: boolean;
+  isTeamMode: boolean;
   _count: {
     registrations: number;
   };
@@ -183,7 +184,7 @@ export default function EventsTable({ events }: { events: EventWithCount[] }) {
                        <Copy className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <ExportModal eventId={event.id} eventTitle={event.title}>
+                  <ExportModal eventId={event.id} eventTitle={event.title} isTeamMode={event.isTeamMode}>
                     <Button variant="outline" size="icon" title="Exportieren">
                        <span className="sr-only">Exportieren</span>
                        <Download className="h-4 w-4" />
